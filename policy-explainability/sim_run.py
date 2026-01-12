@@ -28,7 +28,7 @@ def main():
         ref_point=ref_point,
         deterministic=False,
     )
-    save_traj(pareto_set, path="data/mc_ipro.json")
+    save_traj(pareto_set, path="../data/mc_ipro.json")
 
     pareto_front = ipro.get_pareto_front()
     print(f'\nPareto front points: {len(pareto_front)}')

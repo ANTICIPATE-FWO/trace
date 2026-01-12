@@ -5,7 +5,7 @@ np.set_printoptions(precision=3)
 from analysis import scalarized_reward, filter_traj
 
 def main():
-    filepath = "data/mc_ipro.json"
+    filepath = "../data/mc_ipro.json"
 
     with open(filepath, "r") as f:
         trajectories = load(f)
