@@ -1,20 +1,22 @@
 import warnings
 warnings.filterwarnings("ignore", category=UserWarning)
 
-from env_abstraction import initialize_envs
-from morl_baselines.multi_policy.ipro.ipro import IPRO
-from tracking.track import save_traj
 import numpy as np
 
+from env_abstraction import initialize_envs
+from morl_baselines.multi_policy.ipro.ipro import IPRO
+from analysis import save_traj, visualize_pareto
+
 def main():
-    env, eval_env = initialize_envs()
-    ref_point = np.array([-100.0, -100.0])
+    env, eval_env = initialize_envs(env_id="minecart-v0")
+    ref_point = np.array([-100.0, -100.0, -100.0])
 
     ipro = IPRO(
         env=env,
         direction="maximize",
         tolerance=1e-9,
-        iter_total_timesteps=50_000,
+        max_iterations=20,
+        iter_total_timesteps=500_000,
         learning_rate=2.5e-4,
         device="cpu",
         log=False,
@@ -24,13 +26,16 @@ def main():
     pareto_set = ipro.train(
         eval_env=eval_env,
         ref_point=ref_point,
-        deterministic=True,
+        deterministic=False,
     )
-    save_traj(pareto_set)
+    save_traj(pareto_set, path="data/mc_ipro.json")
 
     pareto_front = ipro.get_pareto_front()
-    print(f'Pareto front: {len(pareto_front)} points')
-    print(f'Ground truth: {np.sum(eval_env.unwrapped.sea_map > 0)} points')
+    print(f'\nPareto front points: {len(pareto_front)}')
+
+    # only for deep sea treasure
+    #print(f'Ground truth: {np.sum(eval_env.unwrapped.sea_map > 0)} points')
+    #visualize_pareto(pareto_front)
 
 
 if __name__ == "__main__":
