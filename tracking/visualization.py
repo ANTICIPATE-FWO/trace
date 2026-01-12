@@ -1,10 +1,4 @@
 import matplotlib.pyplot as plt
-import mo_gymnasium as mo_gym
-import numpy as np
-
-def make_env(env_id:str = "deep-sea-treasure-v0"):
-    return mo_gym.make(env_id)
-
 
 def visualize_pareto(pareto_front, title:str="Pareto Front"):
     if pareto_front.shape[1] != 2:
