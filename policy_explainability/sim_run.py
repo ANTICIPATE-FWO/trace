@@ -3,13 +3,14 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 import numpy as np
 
-from policy_explainability.setting import initialize_envs
+from policy_explainability.setting import initialize_setting
 from policy_explainability.morl_baselines.multi_policy.ipro.ipro import IPRO
 from policy_explainability.analysis import save_traj, visualize_pareto
 
 def main():
-    env, eval_env = initialize_envs(env_id="deep-sea-treasure-v0")
-    ref_point = np.array([-100.0, -100.0])
+    env_id, method = "deep-sea-treasure-v0", "ipro"
+    env, eval_env, ref_point, file_prefix = initialize_setting(env_id=env_id)
+    datapath =f"data/{file_prefix}_{method}.json"
 
     ipro = IPRO(
         env=env,
@@ -28,7 +29,7 @@ def main():
         ref_point=ref_point,
         deterministic=False,
     )
-    save_traj(pareto_set, path="../data/mc_ipro.json")
+    save_traj(pareto_set, path=datapath)
 
     pareto_front = ipro.get_pareto_front()
     print(f'\nPareto front points: {len(pareto_front)}')
