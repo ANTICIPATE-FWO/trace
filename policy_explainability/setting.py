@@ -11,11 +11,16 @@ def make_env_factory(env_id:str):
     return _factory
 
 
-def initialize_envs(env_id:str = "deep-sea-treasure-v0"):
+def initialize_setting(env_id:str = "deep-sea-treasure-v0"):
     env = MOSyncVectorEnv(iter([make_env_factory(env_id)]))
     eval_env = mo_gym.make(env_id)
+
+    #file path
+    #ref point
     return env, eval_env
 
+
+def assign_ref_point(env_id:str
 
 def dst_ground_truth(env):
     raise NotImplementedError
