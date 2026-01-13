@@ -41,3 +41,12 @@ def visualize_dst_map(env):
     plt.tight_layout()
     plt.show()
     plt.close()
+
+
+def pretty_print(rewards_sc, filtered_trajectories):
+    print("\nExpected return\t\t\t  |\tUnique trajectories")
+    print("-" * 60)
+
+    for r_sc, f_traj in zip(rewards_sc, filtered_trajectories):
+        r_str = np.array2string(r_sc, formatter={'float_kind': lambda x: f"{x:+.3f}"})
+        print(f"{r_str:<25} | {len(f_traj):>3}")
