@@ -20,7 +20,8 @@ def initialize_setting(env_id:str = "deep-sea-treasure-v0"):
     return env, eval_env
 
 
-def assign_ref_point(env_id:str
+def assign_ref_point(env_id:str):
+    pass
 
 def dst_ground_truth(env):
     raise NotImplementedError
