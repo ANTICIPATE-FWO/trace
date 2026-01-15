@@ -9,7 +9,7 @@ def save_traj(pareto_set, path:str="data/dst_ipro.json"):
 
     return
 
-def filter_traj(trajectories: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+def filter_traj(trajectories: List[Dict[str, Any]]):
     filtered_trajectories = []
 
     for point in trajectories:

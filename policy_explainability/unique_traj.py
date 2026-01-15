@@ -15,6 +15,8 @@ def main():
     print("Action lengths: ")
     print([len(episode['actions']) for point in filtered_trajectories for episode in point])
 
+    print("Total unique action patterns: ")
+
 
     visualize_pareto(np.array(rewards_sc))
     pretty_print(rewards_sc, filtered_trajectories)
