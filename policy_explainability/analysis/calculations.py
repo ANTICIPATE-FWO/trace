@@ -1,10 +1,10 @@
 import numpy as np
 
-def scalarized_reward(trajectory, gamma=0.99):
+def scalarized_reward(point, gamma=0.99):
     returns = []
 
-    for traj in trajectory:
-        rewards = np.asarray(traj["rewards"], dtype=np.float32)
+    for ep in point:
+        rewards = np.asarray(ep["rewards"], dtype=np.float32)
         timesteps = rewards.shape[0]
 
         discounts = gamma ** np.arange(timesteps, dtype=np.float32)
@@ -13,3 +13,7 @@ def scalarized_reward(trajectory, gamma=0.99):
         returns.append(discounted_return)
 
     return np.mean(returns, axis=0)
+
+def episode_reward(episode):
+    rewards = np.asarray(episode["rewards"], dtype=np.float32)
+    return rewards.sum(axis=0)
