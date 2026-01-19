@@ -14,6 +14,11 @@ def scalarized_reward(point, gamma=0.99):
 
     return np.mean(returns, axis=0)
 
-def episode_reward(episode):
-    rewards = np.asarray(episode["rewards"], dtype=np.float32)
-    return rewards.sum(axis=0)
+def rewards_per_episode(trajectories):
+    rewards = []
+    for point in trajectories:
+        for episode in point:
+            r = np.asarray(episode["rewards"], dtype=np.float32)
+            rewards.append(r.sum(axis=0))
+
+    return np.array(rewards)
