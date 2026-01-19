@@ -1,1 +1,2 @@
-from policy_explainability.visuals.biobjective_clustering import sankey, cluster_connections, k_means
+from policy_explainability.visuals.scatters import sankey, cluster_scatter
+
