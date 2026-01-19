@@ -3,6 +3,7 @@ from typing import Optional
 import numpy as np
 from sklearn.manifold import TSNE
 
+
 def visualize_pareto(pareto_front:np.ndarray, ground_truth:Optional[np.ndarray]=None, title:str="Pareto Front"):
     if pareto_front.shape[1] != 2:
         print(f"Visualization not possible for {pareto_front.shape[1]} dimensions")
@@ -52,12 +53,11 @@ def pretty_print(rewards_sc, filtered_trajectories):
         r_str = np.array2string(r_sc, formatter={'float_kind': lambda x: f"{x:+.3f}"})
         print(f"{r_str:<25} | {len(f_traj):>3}")
 
+
+# TODO decide what to do about tsne
 def tsne_visualization(rewards, action_distributions, perplexity: int = 30, random_state: int = 0):
     reward_dim = rewards.shape[1]
 
-    # --------------------------------------------------
-    # 1. Run t-SNE on action distributions
-    # --------------------------------------------------
     tsne = TSNE(
         n_components=2,
         perplexity=perplexity,
@@ -66,9 +66,6 @@ def tsne_visualization(rewards, action_distributions, perplexity: int = 30, rand
     )
     z = tsne.fit_transform(action_distributions)
 
-    # --------------------------------------------------
-    # 2. Plot: one subplot per reward dimension
-    # --------------------------------------------------
     fig, axes = plt.subplots(
         1,
         reward_dim,

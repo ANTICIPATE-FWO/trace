@@ -1,9 +1,7 @@
 from json import load
 import numpy as np
-from policy_explainability.analysis import filter_traj, pretty_print, visualize_pareto, episode_reward, tsne_visualization
+from policy_explainability.analysis import filter_traj, rewards_per_episode
 from policy_explainability.utils import action_distribution
-
-
 
 
 def main():
@@ -13,10 +11,11 @@ def main():
 
     filtered_trajectories = filter_traj(trajectories)
     rewards_ep = np.array([
-        episode_reward(episode)
+        rewards_per_episode(episode)
         for point in filtered_trajectories for episode in point
     ])
     distributions_ep = action_distribution(filtered_trajectories, normalize=True)
+    print()
 
     #tsne_visualization(rewards_ep, distributions_ep)
 
