@@ -1,1 +1,1 @@
-from policy_explainability.setting.setting import initialize_setting
+from policy_explainability.setting.initialization import initialize_setting
