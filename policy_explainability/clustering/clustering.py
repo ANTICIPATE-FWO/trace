@@ -1,7 +1,7 @@
 import numpy as np
 from sklearn.cluster import KMeans
 from sklearn.mixture import GaussianMixture
-
+from sklearn_extra.cluster import KMedoids
 
 def random_cluster(seed:int=42):
     np.random.seed(seed)
@@ -21,6 +21,10 @@ def k_means(data, k: int = 3):
     kmeans.fit(data)
     return kmeans.labels_, kmeans.cluster_centers_
 
+def k_medoids(data, k: int = 3, metric: str = "euclidean"):
+    kmedoids = KMedoids(n_clusters=k, metric=metric, init="k-medoids++")
+    kmedoids.fit(data)
+    return kmedoids.labels_, kmedoids.cluster_centers_
 
 def gaussian_mixture(data, k_max: int = 10, covariance_type: str = "full"):
     best_gmm, best_bic = None, np.inf
