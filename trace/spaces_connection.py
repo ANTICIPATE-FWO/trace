@@ -4,10 +4,10 @@ from json import load
 import os
 os.chdir("..")
 
-from policy_explainability.utils import filter_traj, rewards_per_episode
-from policy_explainability.clustering import k_means, cluster_connections, gaussian_mixture
-from policy_explainability.visuals import sankey, cluster_scatter, tsne_transform
-from policy_explainability.behavior import policy_dist, policy_sequence
+from trace.utils import filter_traj, rewards_per_episode
+from trace.clustering import k_means, cluster_connections, gaussian_mixture
+from trace.visuals import sankey, cluster_scatter, tsne_transform
+from trace.behavior import policy_dist, policy_sequence
 
 
 def multi_graph(data_3d, graph_labels: list, save: bool = False):

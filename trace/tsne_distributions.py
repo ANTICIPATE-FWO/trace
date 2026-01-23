@@ -1,7 +1,7 @@
 from json import load
 import numpy as np
-from policy_explainability.analysis import filter_traj, rewards_per_episode
-from policy_explainability.utils import action_distribution
+from trace.analysis import filter_traj, rewards_per_episode
+from trace.utils import action_distribution
 
 
 def main():

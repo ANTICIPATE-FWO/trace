@@ -9,7 +9,7 @@ def make_env_factory(env_id:str):
 def initialize_setting(env_id:str = "deep-sea-treasure-v0"):
     env = MOSyncVectorEnv(iter([make_env_factory(env_id)]))
     eval_env = mo_gym.make(env_id)
-    from policy_explainability.setting.env_data import env_data
+    from trace.setting.env_data import env_data
     return env, eval_env, env_data[env_id]["ref_point"], env_data[env_id]["file_prefix"]
 
 
