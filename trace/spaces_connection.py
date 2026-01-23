@@ -7,7 +7,7 @@ os.chdir("..")
 from trace.utils import filter_traj, rewards_per_episode
 from trace.clustering import k_means, cluster_connections, gaussian_mixture
 from trace.visuals import sankey, cluster_scatter, tsne_transform
-from trace.behavior import policy_dist, policy_sequence
+from trace.behavior import policy_dist, policy_sequence, cluster_report
 
 
 def multi_graph(data_3d, graph_labels: list, save: bool = False):
@@ -30,7 +30,7 @@ def multi_graph(data_3d, graph_labels: list, save: bool = False):
     else:
         for fig in plt_figs: fig.show()
         sankey_fig.show()
-
+    return labels, centers
 
 def main():
     graph_labels = [
@@ -43,10 +43,14 @@ def main():
     rewards = rewards_per_episode(trajectories)
     action_dist = policy_dist(trajectories, normalize=True)
     action_sequence = policy_sequence(trajectories)
-    print(action_sequence)
     print(f"Action Dist: {action_dist.shape} Action Seq: {action_sequence.shape} Rewards: {rewards.shape}")
-    multi_graph([action_sequence, rewards], graph_labels, save=False)
+    labels, centers = multi_graph([action_sequence, rewards], graph_labels, save=False)
+    space = 0
 
+    for c_id in range(np.max(labels) + 1):
+        c_ac = action_sequence[labels[space] == c_id]
+        c_r = rewards[labels[space] == c_id]
+        cluster_report(c_ac, c_r, c_id+1)
 
 if __name__ == "__main__":
     main()
