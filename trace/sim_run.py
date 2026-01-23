@@ -6,7 +6,7 @@ os.chdir('..')
 
 import numpy as np
 
-from trace.setting import initialize_setting
+from trace.simulation import initialize_setting
 from trace.morl_baselines.multi_policy.ipro.ipro import IPRO
 from trace.utils import save_traj
 from trace.visuals import visualize_pareto

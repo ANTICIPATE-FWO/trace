@@ -1,7 +1,7 @@
 from typing import Any, List
 import numpy as np
 
-NUM_ACTIONS = 4  # actions: 0,1,2,3 for dst setting
+NUM_ACTIONS = 4  # actions: 0,1,2,3 for dst simulation
 
 def episode_dist(episode: List[Any], normalize: bool = True):
     if len(episode) < 1: raise ValueError('Episode must have at least one action')

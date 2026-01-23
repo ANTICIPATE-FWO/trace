@@ -1,1 +1,0 @@
-from trace.setting.initialization import initialize_setting
