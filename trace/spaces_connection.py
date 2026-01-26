@@ -5,7 +5,7 @@ import os
 os.chdir("..")
 
 from trace.utils import filter_traj, rewards_per_episode
-from trace.clustering import k_means, cluster_connections, gaussian_mixture
+from trace.clustering import k_means, cluster_connections, gaussian_mixture, dirichlet_process_mixture
 from trace.visuals import sankey, cluster_scatter, tsne_transform
 from trace.behavior import policy_dist, policy_sequence, cluster_report
 
@@ -14,7 +14,9 @@ def multi_graph(data_3d, graph_labels: list, save: bool = False):
     labels, centers, plt_figs = [], [], []
     for i, data in enumerate(data_3d):
         #l, c = k_means(data, k=4)
-        l, c = gaussian_mixture(data, k_max=4)
+        #l, c = gaussian_mixture(data, k_max=4)
+        l, c = dirichlet_process_mixture(data, k_max=5)
+
 
         if data.shape[1] > 2: data, c = tsne_transform(data, c)
 
