@@ -4,10 +4,10 @@ from json import load
 import os
 os.chdir("..")
 
-from trace.utils import filter_traj, rewards_per_episode
+from trace.utils import  TrajectoryManager
 from trace.clustering import k_means, cluster_connections, gaussian_mixture, dirichlet_process_mixture
 from trace.visuals import sankey, cluster_scatter, tsne_transform
-from trace.behavior import policy_dist, policy_sequence, cluster_report
+from trace.behavior import behavior_report, reward_report
 
 
 def multi_graph(data_3d, graph_labels: list, save: bool = False):
@@ -40,19 +40,26 @@ def main():
         ('Total reward of episode', 'Treasure', 'Time'),
     ]
     filepath = "data/38_dst_ipro.json"
-    with open(filepath, "r") as f: trajectories = filter_traj(load(f))
+    #filepath = "data/2_mc_ipro.json"
 
-    rewards = rewards_per_episode(trajectories)
-    action_dist = policy_dist(trajectories, normalize=True)
-    action_sequence = policy_sequence(trajectories)
+
+    manager = TrajectoryManager(actions=[0,1,2,3])
+    manager.load_file(filepath)
+
+    rewards = manager.rewards_ep()
+    action_dist = manager.distribution()
+    action_sequence = manager.sequence()
     print(f"Action Dist: {action_dist.shape} Action Seq: {action_sequence.shape} Rewards: {rewards.shape}")
-    labels, centers = multi_graph([action_sequence, rewards], graph_labels, save=False)
-    space = 0
 
-    for c_id in range(np.max(labels) + 1):
-        c_ac = action_sequence[labels[space] == c_id]
-        c_r = rewards[labels[space] == c_id]
-        cluster_report(c_ac, c_r, c_id+1)
+
+    return
+    labels, centers = multi_graph([action_sequence, rewards], graph_labels, save=False)
+
+    for space, report in enumerate([behavior_report, reward_report]):
+        for c_id in range(np.max(labels[space]) + 1):
+            c_ac = action_sequence[labels[space] == c_id]
+            c_r = rewards[labels[space] == c_id]
+            report(c_ac, c_r, c_id + 1)
 
 if __name__ == "__main__":
     main()
