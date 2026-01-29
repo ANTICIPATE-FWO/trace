@@ -1,7 +1,4 @@
 import warnings
-
-from trace.utils import TrajectoryManager
-
 warnings.filterwarnings("ignore", category=UserWarning)
 
 import os
@@ -12,10 +9,11 @@ import numpy as np
 from trace.simulation import initialize_setting, dst_ground_truth
 from trace.morl_baselines.multi_policy.ipro.ipro import IPRO
 from trace.visuals import visualize_pareto
+from trace.utils import TrajectoryManager
 
 def main():
     env_id, method = "deep-sea-treasure-v0", "ipro"
-    env, eval_env, ref_point, file_prefix = initialize_setting(env_id=env_id)
+    env, eval_env, ref_point, file_prefix, actions = initialize_setting(env_id=env_id)
     filepath =f"data/{file_prefix}_{method}.json"
 
     ipro = IPRO(
@@ -37,9 +35,7 @@ def main():
         ref_point=ref_point,
         deterministic=False,
     )
-    manager = TrajectoryManager()
-    manager.load_pareto(pareto_set)
-    manager.save(filepath)
+    TrajectoryManager(actions).load(pareto_set).save(filepath)
 
     pareto_front = ipro.get_pareto_front()
     print(f'\nPareto front points: {len(pareto_front)}')
