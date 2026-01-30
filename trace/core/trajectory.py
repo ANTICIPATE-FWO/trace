@@ -3,14 +3,17 @@ from json import load, dumps
 import numpy as np
 from numbers import Number
 
+from trace.core import discount
+
 class TrajectoryManager:
-    def __init__(self, actions:list):
-        self.trajectories, self.point_num, self.episode_num = [], 0, 0
-        self.actions = sorted(actions)
-        # does it make sense to use the env name and act as data verification as well?
-        # maybe if it runs into many errors this way
-        # if this happens turn the utils into core and move the initialization and enc data inside it
-        self.action_mapping = {a: i for i, a in enumerate(self.actions)}
+    def __init__(self, env_id:str):
+        self.trajectories  = []
+        self.env_id = env_id
+        self.point_num, self.episode_num = 0, 0
+
+        from trace.core import env_metadata
+        self.metadata = env_metadata[env_id]
+        self.action_mapping = {a: i for i, a in enumerate(self.metadata['actions'])}
 
     def load(self, source, filtering=False):
         if isinstance(source, str): self.trajectories = load(open(source, "rb"))
@@ -21,7 +24,14 @@ class TrajectoryManager:
 
         self.point_num = len(self.trajectories)
         self.episode_num = sum(len(point) for point in self.trajectories)
+        self._verify_data()
         return self
+
+    def _verify_data(self):
+        # todo include shape assertations
+        action_seq = self.sequence(key='actions', pad=None)
+        assert all(a in self.metadata["actions"] for ep in action_seq for a in ep)
+
 
     def _filter_duplicates(self):
         filtered_trajectories = []
@@ -54,29 +64,21 @@ class TrajectoryManager:
 
         return np.array(rewards)
 
-    def rewards_sc(self, gamma: float = 0.99):
-        # todo make this more clear
-        rewards = []
-        for point in self.trajectories:
-            point_return = []
-            for episode in point:
-                r = np.asarray(episode["rewards"], dtype=np.float32)
-                discounts = gamma ** np.arange(r.shape[0], dtype=np.float32)
-                discounted_r = (r * discounts[:, None]).sum(axis=0)
-
-                point_return.append(discounted_r)
-            rewards.append(np.mean(point_return, axis=0))
-
-        return rewards
-
+    def accrued_reward(self, gamma: float = 0.99):
+        return [
+            np.mean([
+                discount(episode["rewards"], gamma) for episode in point
+            ], axis=0)
+            for point in self.trajectories
+        ]
 
     def sequence(self, key: str = "actions", pad: int|None = -1):
         seq = [episode[key] for point in self.trajectories for episode in point]
         if pad is None: return seq
 
         max_len = max(len(a) for a in seq)
-
         padding = pad if isinstance(seq[0][0], Number) else [pad] * len(seq[0][0])
+
         return np.array([s + [padding] * (max_len - len(s)) for s in seq])
 
 
