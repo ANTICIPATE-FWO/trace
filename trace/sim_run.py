@@ -9,7 +9,7 @@ import numpy as np
 from trace.simulation import initialize_setting, dst_ground_truth
 from trace.morl_baselines.multi_policy.ipro.ipro import IPRO
 from trace.visuals import visualize_pareto
-from trace.utils import TrajectoryManager
+from trace.core import TrajectoryManager
 
 def main():
     env_id, method = "deep-sea-treasure-v0", "ipro"

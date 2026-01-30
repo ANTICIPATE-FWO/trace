@@ -1,10 +1,9 @@
 import numpy as np
 np.set_printoptions(threshold=10000)
-from json import load
 import os
 os.chdir("..")
 
-from trace.utils import  TrajectoryManager
+from trace.core import  TrajectoryManager
 from trace.clustering import k_means, cluster_connections, gaussian_mixture, dirichlet_process_mixture
 from trace.visuals import sankey, cluster_scatter, tsne_transform
 from trace.behavior import behavior_report, reward_report

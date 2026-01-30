@@ -38,7 +38,5 @@ class BayesianDSTPolicy:
     def act(self, obs, deterministic=False):
         probs = self.action_probs(obs)
 
-        if deterministic:
-            return int(probs.argmax())
-
+        if deterministic: return int(probs.argmax())
         return int(np.random.choice(self.num_actions, p=probs))
