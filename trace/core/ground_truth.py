@@ -1,12 +1,8 @@
 from collections import deque
 import numpy as np
 
-ACTIONS = {
-    0: (-1, 0),  # up
-    1: (1, 0),   # down
-    2: (0, -1),  # left
-    3: (0, 1),   # right
-}
+from trace.core import env_metadata
+ACTIONS = env_metadata['deep-sea-treasure-v0']['actions']
 
 
 def shortest_distances(sea_map, start):
@@ -68,5 +64,4 @@ def dst_ground_truth(sea_map, start: tuple = (0,0)):
             "actions": actions,
             "rewards": [sea_map[r, c], -int(dist[r, c])],
             } for observations, actions in paths]
-
     return ground_truth

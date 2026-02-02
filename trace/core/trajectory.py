@@ -13,11 +13,11 @@ class TrajectoryManager:
 
         from trace.core import env_metadata
         self.metadata = env_metadata[env_id]
-        self.action_mapping = {a: i for i, a in enumerate(self.metadata['actions'])}
+        self.action_mapping = {a: i for i, a in enumerate(self.metadata['actions'].keys())}
 
     def load(self, source, filtering=False):
         if isinstance(source, str): self.trajectories = load(open(source, "rb"))
-        elif isinstance(source, list): self.trajectories = [traj for _, _, traj in source]
+        elif isinstance(source, list): self.trajectories = source
         else: raise ValueError(f"Unknown source type: {type(source)}")
 
         if filtering: self._filter_duplicates()
@@ -60,7 +60,7 @@ class TrajectoryManager:
         for point in self.trajectories:
             for episode in point:
                 r = np.asarray(episode["rewards"], dtype=np.float32)
-                rewards.append(r.sum(axis=0))
+                rewards.append(r if r.ndim==1 else r.sum(axis=0))
 
         return np.array(rewards)
 
