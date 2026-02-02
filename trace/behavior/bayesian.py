@@ -17,12 +17,7 @@ class BayesianDSTPolicy:
         self.counts[key][action] += 1
 
     def fit(self, obs_seq, act_seq):
-        """
-        obs_seq: (N, T, obs_dim)
-        act_seq: (N, T) or one-hot
-        """
-        if act_seq.ndim == 3:
-            act_seq = act_seq.argmax(axis=-1)
+        if act_seq.ndim == 3: act_seq = act_seq.argmax(axis=-1)
 
         for traj_obs, traj_act in zip(obs_seq, act_seq):
             for o, a in zip(traj_obs, traj_act):

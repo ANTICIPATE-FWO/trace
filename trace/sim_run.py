@@ -4,18 +4,20 @@ warnings.filterwarnings("ignore", category=UserWarning)
 import os
 os.chdir('..')
 
-import numpy as np
-
-from trace.simulation import initialize_setting, dst_ground_truth
+from trace.core import initialize_setting, dst_ground_truth
 from trace.morl_baselines.multi_policy.ipro.ipro import IPRO
-from trace.visuals import visualize_pareto
 from trace.core import TrajectoryManager
 
 def main():
-    env_id, method = "deep-sea-treasure-v0", "ipro"
+    env_id, method = "deep-sea-treasure-v0", "ground_truth"
     env, eval_env, ref_point, file_prefix, actions = initialize_setting(env_id=env_id)
     filepath =f"data/{file_prefix}_{method}.json"
 
+    TrajectoryManager(env_id).load([dst_ground_truth(eval_env.unwrapped.sea_map)]).save(filepath)
+    print(f'Saved ground truth trajectories in {filepath}.')
+
+    method = "ipro"
+    filepath = f"data/{file_prefix}_{method}.json"
     ipro = IPRO(
         env=env,
         direction="maximize",
@@ -35,15 +37,10 @@ def main():
         ref_point=ref_point,
         deterministic=False,
     )
-    TrajectoryManager(actions).load(pareto_set).save(filepath)
+    TrajectoryManager(env_id).load([traj for _, _, traj in pareto_set]).save(filepath)
+    print(f'Saved Pareto trajectories in {filepath}.')
+    print(f'\nIPRO Pareto front points: {ipro.get_pareto_front()}')
 
-    pareto_front = ipro.get_pareto_front()
-    print(f'\nPareto front points: {len(pareto_front)}')
-
-    # only for deep sea treasure
-    if env_id != "deep-sea-treasure-v0": return
-    print(f'Ground truth: {np.sum(eval_env.unwrapped.sea_map > 0)} points')
-    visualize_pareto(pareto_front)
 
 
 if __name__ == "__main__":
