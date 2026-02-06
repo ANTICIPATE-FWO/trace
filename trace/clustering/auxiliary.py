@@ -1,4 +1,6 @@
 import numpy as np
+from numbers import Number
+
 
 def random_cluster(seed:int=42):
     np.random.seed(seed)
@@ -32,3 +34,10 @@ def cluster_connections(labels):
                 target.append(k + j)
                 value.append(count)
     return source, target, value
+
+
+def homogenize(sequence: list, pad: int = -1):
+    max_len = max(len(a) for a in sequence)
+    padding = pad if isinstance(sequence[0][0], Number) else [pad] * len(sequence[0][0])
+    return [s + [padding] * (max_len - len(s)) for s in sequence]
+
