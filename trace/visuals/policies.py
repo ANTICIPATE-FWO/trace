@@ -5,16 +5,17 @@ from trace.core import env_metadata
 ACTIONS = env_metadata['deep-sea-treasure-v0']['actions']
 
 
-def grid_arrows(policy, width, height, title: str = "Conditioned Policy (Most Probable Action)"):
-    # todo make this versatile to observation spaces that are not boxes
-    x, y = np.meshgrid(np.arange(width), np.arange(height))
+def grid_arrows(policy, title: str = "Conditioned Policy (Most Probable Action)"):
+    #todo the for loop can become cleaner, too many declarations
+    width, height = policy.obs_shape()
+    x, y = policy.obs_space()
+    prob_matrix = policy.prob_matrix()
     u = np.full_like(x, np.nan, dtype=float)
     v = np.full_like(y, np.nan, dtype=float)
 
     for y in range(height):
         for x in range(width):
-            obs = np.array([y, x])
-            probs = policy.action_probs(obs)
+            probs = prob_matrix[y, x]
             if np.max(probs) - np.min(probs) < 1e-6: continue
             best_action = np.argmax(probs)
 
@@ -24,7 +25,7 @@ def grid_arrows(policy, width, height, title: str = "Conditioned Policy (Most Pr
 
     plt.figure(figsize=(6, 6))
     plt.quiver(
-        x, y, u, v,
+        *policy.obs_space(), u, v,
         angles="xy",
         scale_units="xy",
         scale=1,
