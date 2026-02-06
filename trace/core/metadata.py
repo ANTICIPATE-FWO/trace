@@ -8,7 +8,8 @@ env_metadata = {
             2: (0, -1),  # left
             3: (0, 1),   # right
         },
-        "reward_dim": (2,)
+        "reward_dim": (2,),
+        "observations_dim": (12, 12)
     },
     "minecart-v0": {
         "ref_point": [-100.0, -100.0, -100.0],

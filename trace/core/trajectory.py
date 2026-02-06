@@ -1,7 +1,6 @@
 from typing import List, Dict, Any
 from json import load, dumps
 import numpy as np
-from numbers import Number
 
 from trace.core import discount
 
@@ -32,6 +31,8 @@ class TrajectoryManager:
         action_seq = self.sequence(key='actions', pad=None)
         assert all(a in self.metadata["actions"] for ep in action_seq for a in ep)
 
+    def __len__(self):
+        return len(self.trajectories)
 
     def _filter_duplicates(self):
         filtered_trajectories = []
@@ -65,21 +66,24 @@ class TrajectoryManager:
         return np.array(rewards)
 
     def accrued_reward(self, gamma: float = 0.99):
-        return [
+        return np.array([
             np.mean([
                 discount(episode["rewards"], gamma) for episode in point
             ], axis=0)
             for point in self.trajectories
-        ]
+        ])
 
-    def sequence(self, key: str = "actions", pad: int|None = -1):
-        seq = [episode[key] for point in self.trajectories for episode in point]
-        if pad is None: return seq
+    def sequence(self, key: str = "actions", pad: int|None = -1, flatten: bool = True):
+        from trace.clustering import homogenize
+        pareto_seq = [[episode[key] for episode in point] for point in self.trajectories]
 
-        max_len = max(len(a) for a in seq)
-        padding = pad if isinstance(seq[0][0], Number) else [pad] * len(seq[0][0])
+        if pad: pareto_seq = [homogenize(point) for point in pareto_seq]
+        if flatten:
+            flat_pareto_seq = [episode for point in pareto_seq for episode in point]
+            return flat_pareto_seq if pad is None else np.array(flat_pareto_seq)
+        return pareto_seq
 
-        return np.array([s + [padding] * (max_len - len(s)) for s in seq])
+
 
 
     def distribution(self, key: str = "actions", normalize: bool = True):
