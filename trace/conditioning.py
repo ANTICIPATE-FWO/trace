@@ -15,14 +15,15 @@ def main():
     manager = TrajectoryManager(env_id).load(filepath)
 
     obs_seq = manager.sequence(key='observations', pad=None)
-    act_seq = manager.sequence(key='actions')
-    policy = BayesianDSTPolicy(num_actions=4, alpha=0.5)
+    act_seq = manager.sequence(key='actions', pad=None)
+    obs_space = np.meshgrid(np.arange(12), np.arange(12))
+    policy = BayesianDSTPolicy(num_actions=4, obs_space=obs_space, alpha=0.5)
 
     policy.fit(obs_seq, act_seq)
-    np.meshgrid(np.arange(12), np.arange(12))
 
-    test_obs = [0,5]
-    print("Action probabilities:", policy.action_probs(test_obs))
+    test_obs = [2,3]
+    probs_matrix = policy.prob_matrix()
+    print("Action probabilities:", policy.action_probs(test_obs), probs_matrix[*test_obs])
     print("Sampled action:", policy.act(test_obs))
 
 
