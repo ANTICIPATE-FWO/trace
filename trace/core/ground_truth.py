@@ -59,9 +59,10 @@ def dst_ground_truth(sea_map, start: tuple = (0,0)):
         if np.isinf(dist[r, c]): continue
         paths = enumerate_shortest_paths(sea_map, dist, start, (r, c))
 
-        ground_truth += [{
+        ground_truth.extend([{
             "observations": observations,
             "actions": actions,
             "rewards": [sea_map[r, c], -int(dist[r, c])],
-            } for observations, actions in paths]
+            }] for observations, actions in paths)
+    print(len(ground_truth))
     return ground_truth
