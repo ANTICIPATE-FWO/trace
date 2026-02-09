@@ -1,6 +1,5 @@
 import numpy as np
-from numbers import Number
-
+from collections import defaultdict
 
 def random_cluster(seed:int=42):
     np.random.seed(seed)
@@ -36,8 +35,14 @@ def cluster_connections(labels):
     return source, target, value
 
 
-def homogenize(sequence: list, pad: int = -1):
-    max_len = max(len(a) for a in sequence)
-    padding = pad if isinstance(sequence[0][0], Number) else [pad] * len(sequence[0][0])
-    return [s + [padding] * (max_len - len(s)) for s in sequence]
 
+
+def aggregate_policies(ac_seq, obs_seq, labels):
+    assert len(ac_seq) == len(obs_seq)
+    c_ac, c_obs = defaultdict(list), defaultdict(list)
+
+    for ac, obs, lbl in zip(ac_seq, obs_seq, labels):
+        c_ac[lbl]  += ac
+        c_obs[lbl] += obs
+
+    return list(c_obs.values()), list(c_ac.values())
