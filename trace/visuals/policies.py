@@ -8,7 +8,7 @@ ACTIONS = env_metadata['deep-sea-treasure-v0']['actions']
 def grid_arrows(policy, title: str = "Conditioned Policy (Most Probable Action)"):
     #todo the for loop can become cleaner, too many declarations
     width, height = policy.obs_shape()
-    x, y = policy.obs_space()
+    x, y = policy.obs_space
     prob_matrix = policy.prob_matrix()
     u = np.full_like(x, np.nan, dtype=float)
     v = np.full_like(y, np.nan, dtype=float)
@@ -25,7 +25,7 @@ def grid_arrows(policy, title: str = "Conditioned Policy (Most Probable Action)"
 
     plt.figure(figsize=(6, 6))
     plt.quiver(
-        *policy.obs_space(), u, v,
+        *policy.obs_space, u, v,
         angles="xy",
         scale_units="xy",
         scale=1,
