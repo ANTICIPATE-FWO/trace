@@ -5,7 +5,7 @@ def discretize_obs(obs, precision=2):
     return tuple(round(float(x), precision) for x in obs)
 
 class BayesianDSTPolicy:
-    def __init__(self, num_actions, obs_space, alpha=1.0):
+    def __init__(self, obs_space, num_actions, alpha=1.0):
         self.num_actions = num_actions
         self.obs_space = obs_space
         self.alpha = alpha
