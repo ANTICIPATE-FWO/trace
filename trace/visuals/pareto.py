@@ -4,11 +4,11 @@ import numpy as np
 from sklearn.manifold import TSNE
 
 
-def visualize_pareto(pareto_front:np.ndarray, ground_truth:Optional[np.ndarray]=None, title:str="Pareto Front"):
-    if pareto_front.shape[1] != 2:
-        print(f"Visualization not possible for {pareto_front.shape[1]} dimensions")
+def visualize_pareto(points:np.ndarray, ground_truth:Optional[np.ndarray]=None, title:str="Pareto Front", save:str|None=None):
+    if points.shape[1] != 2:
+        print(f"Visualization not possible for {points.shape[1]} dimensions")
         return
-    plt.scatter( pareto_front[:, 0], pareto_front[:, 1], s=40, label="Pareto Front")
+    plt.scatter(points[:, 0], points[:, 1], s=40, label="Pareto Front", color="black")
     if ground_truth is not None:
         plt.scatter(ground_truth[:, 0], ground_truth[:, 1], s=40, label="Ground Truth")
         plt.legend()
@@ -17,6 +17,7 @@ def visualize_pareto(pareto_front:np.ndarray, ground_truth:Optional[np.ndarray]=
     plt.title(title)
     plt.grid(True)
     plt.show()
+    if save is not None: plt.savefig(save)
 
 
 def visualize_dst_map(env):
