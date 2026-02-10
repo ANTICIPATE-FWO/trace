@@ -12,6 +12,7 @@ class TrajectoryManager:
 
         from trace.core import env_metadata
         self.metadata = env_metadata[env_id]
+        self.num_actions = len(self.metadata['actions'])
         self.action_mapping = {a: i for i, a in enumerate(self.metadata['actions'].keys())}
 
     def load(self, source, filtering=False):
@@ -28,7 +29,7 @@ class TrajectoryManager:
 
     def _verify_data(self):
         # todo include shape assertations
-        action_seq = self.sequence(key='actions', pad=None)
+        action_seq = self.sequence(key='actions', flatten=True, pad=None)
         assert all(a in self.metadata["actions"] for ep in action_seq for a in ep)
 
     def __len__(self):
@@ -73,32 +74,49 @@ class TrajectoryManager:
             for point in self.trajectories
         ])
 
-    def sequence(self, key: str = "actions", pad: int|None = -1, flatten: bool = True):
-        from trace.clustering import homogenize
-        pareto_seq = [[episode[key] for episode in point] for point in self.trajectories]
+    def sequence(self, key: str = "actions", pad: int|None = -1, flatten: bool = False):
+        seq = [[episode[key] for episode in point] for point in self.trajectories]
+        if flatten: seq = [episode for point in seq for episode in point]
+        if pad: return np.array(homogenize(seq))
+        return seq
 
-        if pad: pareto_seq = [homogenize(point) for point in pareto_seq]
-        if flatten:
-            flat_pareto_seq = [episode for point in pareto_seq for episode in point]
-            return flat_pareto_seq if pad is None else np.array(flat_pareto_seq)
-        return pareto_seq
-
-
-
-
-    def distribution(self, key: str = "actions", normalize: bool = True):
-        mapping = self.action_mapping  # todo state mapping
+    def distribution(self, key: str = "actions", normalize: bool = True, flatten: bool = False):
         dists = []
 
         for point in self.trajectories:
+            dists.append([])
             for episode in point:
-                counts = np.zeros(len(mapping))
-                for v in episode[key]: counts[mapping[v]] += 1
+                counts = np.zeros(self.num_actions)
+                for v in episode[key]: counts[self.action_mapping[v]] += 1
                 if normalize: counts /= counts.sum()
-                dists.append(counts)
-        return np.array(dists)
+                dists[-1].append(counts)
+        if flatten: return np.stack([d for ep in dists for d in ep])
+        return dists
 
+    def policy_data(self, pad: int|None = -1, flatten: bool = False):
+        obs = self.sequence(key="observations", pad=pad, flatten=flatten)
+        acs = self.sequence(key="actions", pad=pad, flatten=flatten)
+        return obs, acs
 
     def save(self, filepath: str):
         with open(filepath, "w") as f: f.write(dumps(self.trajectories, indent=2))
 
+
+def homogenize(array, pad=-1):
+    def shape(x):
+        if not isinstance(x, list): return ()
+        sub = [shape(i) for i in x]
+        return (len(x),) + tuple(
+            max((s[d] if d < len(s) else 0) for s in sub)
+            for d in range(max(map(len, sub), default=0))
+        )
+
+    def fill(x, shp):
+        if not shp: return x
+        x = x if isinstance(x, list) else []
+        return [
+            fill(x[i] if i < len(x) else pad, shp[1:])
+            for i in range(shp[0])
+        ]
+
+    return fill(array, shape(array))
