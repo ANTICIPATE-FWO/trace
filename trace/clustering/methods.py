@@ -17,10 +17,10 @@ def k_medoids(data, k: int = 3, metric: str = "euclidean"):
     return kmedoids.labels_, kmedoids.cluster_centers_
 
 
-def gaussian_mixture(data, k_max: int = 10, covariance_type: str = "full"):
+def gaussian_mixture(data, k: int = 10, covariance_type: str = "full"):
     best_gmm, best_bic = None, np.inf
 
-    for k in range(1, k_max + 1):
+    for k in range(1, k + 1):
         gmm = GaussianMixture(
             n_components=k,
             covariance_type=covariance_type,
@@ -40,12 +40,12 @@ def gaussian_mixture(data, k_max: int = 10, covariance_type: str = "full"):
 
 def dirichlet_process_mixture(
     data,
-    k_max: int = 20,
+    k: int = 20,
     covariance_type: str = "full",
     weight_concentration_prior: float = 1.0
 ):
     dpgmm = BayesianGaussianMixture(
-        n_components=k_max,
+        n_components=k,
         covariance_type=covariance_type,
         weight_concentration_prior_type="dirichlet_process",
         weight_concentration_prior=weight_concentration_prior,
