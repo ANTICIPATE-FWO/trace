@@ -5,8 +5,7 @@ import numpy as np
 np.set_printoptions(suppress=True)
 
 from trace.core import TrajectoryManager
-
-filenames = ['data/38_dst_ipro.json', 'data/dst_ground_truth.json']
+from trace.clustering import aggregate_policies
 
 synthetic_dst_data = [
     # first pareto point
@@ -30,14 +29,28 @@ synthetic_dst_data = [
 num_points = 2
 num_episodes = [1, 2]
 
+def aggregation():
+    manager = TrajectoryManager(env_id='deep-sea-treasure-v0').load(synthetic_dst_data)
+    ac_seq = manager.sequence(flatten=False, pad=None)
+    obs_seq = manager.sequence(flatten=False, pad=None)
+    c_obs, c_ac = aggregate_policies(ac_seq, obs_seq, [0] * num_points)
+    assert len(c_obs) == len(c_ac) == sum(num_episodes)
+
+
 def sequence():
     manager = TrajectoryManager(env_id='deep-sea-treasure-v0').load(synthetic_dst_data)
-    ac_seq = manager.sequence(flatten=False)
+    ac_seq = manager.sequence(flatten=False, pad=None)
     assert len(ac_seq) == num_points
     for episode, num in zip(ac_seq, num_episodes):
         assert len(episode) == num
-    ac_seq = manager.sequence(flatten=True)
-    print(ac_seq)
+    ac_seq = manager.sequence(flatten=True, pad=None)
+    assert len(ac_seq) == sum(num_episodes)
+    max_len = max(len(ac) for ac in ac_seq)
+    ac_seq = manager.sequence(flatten=False, pad=-1)
+    assert np.array(ac_seq).shape == (num_points, len(num_episodes), max_len)
+    ac_seq = manager.sequence(flatten=True, pad=-1)
+    assert np.array(ac_seq).shape == (sum(num_episodes), max_len)
+
 
 def distribution():
     manager = TrajectoryManager(env_id='deep-sea-treasure-v0').load(synthetic_dst_data)
@@ -56,3 +69,4 @@ def main():
 if __name__ == '__main__':
     distribution()
     sequence()
+    aggregation()

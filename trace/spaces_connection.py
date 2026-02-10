@@ -4,11 +4,11 @@ np.set_printoptions(threshold=10000, suppress=True)
 import os
 os.chdir("..")
 
-from trace.core import  TrajectoryManager, env_metadata
+from trace.core import  TrajectoryManager
 from trace.clustering import (k_means, k_medoids, cluster_connections, gaussian_mixture, dirichlet_process_mixture,
                               cluster_connections, aggregate_policies)
 from trace.visuals import sankey, cluster_scatter, tsne_transform, grid_arrows
-from trace.behavior import BayesianDSTPolicy
+from trace.behavior import BayesianPolicy, frobenius
 
 # config
 graph_labels = [('TSNE of Conditioned Policies (Frobenius distance)', 'Dimension 1', 'Dimension 2'),
@@ -20,18 +20,11 @@ cluster=k_medoids
 
 
 def main():
-    h, w = env_metadata[env_id]['observations_dim']
-    obs_space = np.meshgrid(np.arange(h), np.arange(w))
-
-    manager = TrajectoryManager(env_id=env_id).load(filepath)
+    manager = TrajectoryManager(env_id).load(filepath)
     rewards = manager.accrued_reward()
-    ac_seq = manager.sequence(key='actions', flatten=False, pad=None)
-    obs_seq = manager.sequence(key='observations', flatten=False, pad=None)
-    policies = [
-        BayesianDSTPolicy(obs_space=obs_space, num_actions=4, alpha=0.5).fit(obs, acs) # todo metadata inside
-        for obs, acs in zip(obs_seq, ac_seq)
-    ]
-    distance = np.array([[np.linalg.norm(p1.prob_matrix() - p2.prob_matrix()) for p2 in policies] for p1 in policies])
+    obs_seq, ac_seq = manager.policy_data(flatten=False, pad=None)
+    policies = [BayesianPolicy(env_id, alpha=0.5).fit(obs, acs)for obs, acs in zip(obs_seq, ac_seq)]
+    distance = frobenius(policies)
 
 
     labels, centers = [], []
@@ -51,7 +44,7 @@ def main():
 
     c_obs, c_ac = aggregate_policies(ac_seq, obs_seq, labels[0])
     for i in range(len(c_obs)):
-        policy = BayesianDSTPolicy(obs_space=obs_space, num_actions=4, alpha=0.5).fit(c_obs[i], c_ac[i])
+        policy = BayesianPolicy(env_id, alpha=0.5).fit(c_obs[i], c_ac[i])
         grid_arrows(policy, title=f'Behavior Cluster {i}')
 
 

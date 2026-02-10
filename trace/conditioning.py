@@ -5,7 +5,7 @@ import numpy as np
 np.set_printoptions(suppress=True)
 
 from trace.core import TrajectoryManager
-from trace.behavior import BayesianDSTPolicy
+from trace.behavior import BayesianPolicy
 
 
 
@@ -16,8 +16,7 @@ def main():
 
     obs_seq = manager.sequence(key='observations', pad=None)
     act_seq = manager.sequence(key='actions', pad=None)
-    obs_space = np.meshgrid(np.arange(12), np.arange(12))
-    policy = BayesianDSTPolicy(num_actions=4, obs_space=obs_space, alpha=0.5)
+    policy = BayesianPolicy(env_id, alpha=0.5)
 
     policy.fit(obs_seq, act_seq)
 
