@@ -1,14 +1,13 @@
 import numpy as np
-np.set_printoptions(threshold=10000, suppress=True)
+np.set_printoptions(threshold=10000, suppress=True, precision=3)
 import os
 os.chdir("..")
-import random
-from scipy.spatial.distance import jensenshannon
+from json import load
 
-from trace.core import  TrajectoryManager, env_metadata
-from trace.clustering import k_means, k_medoids, cluster_connections, aggregate_policies
-from trace.visuals import sankey, cluster_scatter, tsne_transform, grid_arrows
-from trace.behavior import BayesianDSTPolicy
+from trace.core import  TrajectoryManager, env_metadata, synthetic_stochastic_points
+from trace.clustering import k_means, k_medoids, gaussian_mixture, cluster_connections, aggregate_policies
+from trace.behavior import BayesianPolicy, frobenius
+from trace.visuals import grid_arrows
 
 # config
 graph_labels = [('TSNE of Conditioned Policies (Frobenius distance)', 'Dimension 1', 'Dimension 2'),
@@ -16,70 +15,74 @@ graph_labels = [('TSNE of Conditioned Policies (Frobenius distance)', 'Dimension
 save = False
 filepath  = "data/dst_ground_truth.json"
 env_id = 'deep-sea-treasure-v0'
-cluster=k_medoids
+cluster=gaussian_mixture
+k = 3
 
-def action_clarity_sparse(prob_matrix):
+def sparse_action_clarity(prob_matrix):
     var = np.var(prob_matrix, axis=2)
     visited = prob_matrix.var(axis=2) != 0
 
-    if not np.any(visited):
-        return 0.0
+    if not np.any(visited): return 0.0
 
     decisiveness = var[visited].mean()
     sparsity = 1.0 - visited.mean()
 
     return decisiveness * sparsity
 
+def sparse_action_clarity_entropy(prob_matrix, eps=1e-12):
+    probs = prob_matrix / (prob_matrix.sum(axis=2, keepdims=True) + eps)
+    entropy = -np.sum(probs * np.log(probs + eps), axis=2)
+    visited = prob_matrix.var(axis=2) != 0
+
+    if not np.any(visited): return 0.0
+
+    decisiveness = (1.0 - entropy[visited]).mean()
+    sparsity = 1.0 - visited.mean()
+
+    return decisiveness * sparsity
+
+
 def main():
-    h, w = env_metadata[env_id]['observations_dim']
-    obs_space = np.meshgrid(np.arange(h), np.arange(w))
+    ground_truth = load(open(filepath, 'rb'))
+    manager = TrajectoryManager(env_id).load(synthetic_stochastic_points(ground_truth))
+    obs_seq, ac_seq = manager.policy_data(flatten=False, pad=None)
 
-    print('loading file')
-    manager = TrajectoryManager(env_id=env_id).load(filepath)
-
-    rewards = manager.accrued_reward()
-    ac_seq = manager.sequence(key='actions', flatten=False, pad=None)
-    obs_seq = manager.sequence(key='observations', flatten=False, pad=None)
     #dists = manager.distribution(key='actions')
-    print('making policies')
-    policies = [BayesianDSTPolicy(obs_space=obs_space, num_actions=4, alpha=0.5).fit(obs, acs) # todo metadata inside
-                for obs, acs in zip(obs_seq, ac_seq)]
-    print('calculating distance')
-    P = np.stack([p.prob_matrix().ravel() for p in policies])
-    norms = np.sum(P * P, axis=1)
-    dist2 = norms[:, None] + norms[None, :] - 2.0 * P @ P.T
-    dist2 = np.maximum(dist2, 0.0)
-    distance = np.sqrt(dist2)
-    print('starting clustering')
-    labels, centers = [], []
-    for i, data in enumerate([distance, rewards]):
-        l, c = cluster(data, k=3)
-        labels.append(l)
-        centers.append(c)
-    print('starting aggregation')
-    c_obs, c_ac = aggregate_policies(ac_seq, obs_seq, labels[0])
-    c_pols = [BayesianDSTPolicy(obs_space=obs_space, num_actions=4, alpha=0.5).fit(obs, acs) for obs, acs in zip(c_obs, c_ac)]
-    print('starting random clustering')
-    rnd_labels = [random.randint(0, 2) for _ in range(len(ac_seq))]
-    rnd_obs, rnd_ac = aggregate_policies(ac_seq, obs_seq, rnd_labels)
-    rnd_pols = [BayesianDSTPolicy(obs_space=obs_space, num_actions=4, alpha=0.5).fit(obs, ac)
-                    for obs, ac in zip(rnd_obs, rnd_ac)]
+    policies = [BayesianPolicy(env_id, alpha=0.5).fit(obs, acs) for obs, acs in zip(obs_seq, ac_seq)]
 
-    print(np.var(rnd_pols[2].prob_matrix(), axis=2))
+    # can be used for behavioral clustering
+    ac_seq_pad = manager.sequence(key='actions', flatten=True, pad=-1)
+    distance = frobenius(policies)
+
+    cl_labels, _ = cluster(distance, k=k)
+    cl_pols = [BayesianPolicy(env_id, alpha=0.5).fit(obs, acs)
+               for obs, acs in zip(*aggregate_policies(ac_seq, obs_seq, cl_labels))]
+
+    rnd_labels = np.random.randint(0, k, size=len(cl_labels))
+    rnd_pols = [BayesianPolicy(env_id, alpha=0.5).fit(obs, ac)
+        for obs, ac in zip(*aggregate_policies(ac_seq, obs_seq, rnd_labels))]
+
+    obs_seq, ac_seq = manager.policy_data(flatten=True, pad=None)
+    universal_pol = BayesianPolicy(env_id, alpha=0.5).fit(obs_seq, ac_seq)
+
+    print(np.var(rnd_pols[-1].prob_matrix(), axis=2))
     print()
-    print(np.var(c_pols[2].prob_matrix(), axis=2))
+    print(np.var(cl_pols[-1].prob_matrix(), axis=2))
+    print()
 
-    for p1, p2 in zip(c_pols, rnd_pols):
-        c1, c2 = action_clarity_sparse(p1.prob_matrix()), action_clarity_sparse(p2.prob_matrix())
-        print(f'True: {c1:.2f} Random: {c2:.2f}')
+    def metric_report(func):
+        universal_score = func(universal_pol.prob_matrix())
+        true_score = [func(pol.prob_matrix()) for pol in cl_pols]
+        rnd_score = [func(pol.prob_matrix()) for pol in rnd_pols]
 
-    return
-    true_score = demultiplexing_score(c_pols)
-    rnd_score = demultiplexing_score(rnd_pols)
+        print(f"Without clustering: {universal_score:.2f}")
+        print(f"True clustering:    {np.array(true_score)}")
+        print(f"Random clustering:  {np.array(rnd_score)}")
 
-    print(f"True clustering JS:   {true_score:.4f}")
-    print(f"Random clustering JS: {rnd_score:.4f}")
-    print(f"Ratio: {true_score / (rnd_score + 1e-8):.2f}x")
+    print('Variance')
+    metric_report(sparse_action_clarity)
+    print('Entropy')
+    metric_report(sparse_action_clarity_entropy)
 
 
 if __name__ == "__main__":
