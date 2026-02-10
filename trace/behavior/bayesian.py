@@ -4,14 +4,17 @@ import numpy as np
 def discretize_obs(obs, precision=2):
     return tuple(round(float(x), precision) for x in obs)
 
-class BayesianDSTPolicy:
-    def __init__(self, obs_space, num_actions, alpha=1.0):
-        self.num_actions = num_actions
-        self.obs_space = obs_space
-        self.alpha = alpha
+class BayesianPolicy:
+    def __init__(self, env_id: str = 'deep-sea-treasure-v0', alpha=1.0):
+        self.env_id, self.alpha = env_id, alpha
+
+        from trace.core import env_metadata
+        self.num_actions = len(env_metadata[env_id]['actions'])
+        h, w = env_metadata[env_id]['observations_dim']
+        self.obs_space = np.meshgrid(np.arange(h), np.arange(w))
 
         # state → action counts
-        self.counts = defaultdict(lambda: np.zeros(num_actions))
+        self.counts = defaultdict(lambda: np.zeros(self.num_actions))
 
     def update(self, obs, action):
         key = discretize_obs(obs)
@@ -25,8 +28,6 @@ class BayesianDSTPolicy:
         return self.num_actions
 
     def fit(self, obs_seq, act_seq):
-        #if act_seq.ndim == 3: act_seq = act_seq.argmax(axis=-1)
-
         for traj_obs, traj_act in zip(obs_seq, act_seq):
             for o, a in zip(traj_obs, traj_act):
                 self.update(o, int(a))
