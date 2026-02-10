@@ -16,6 +16,6 @@ scipy-stubs==1.17.0.2
 scs==3.2.11
 seaborn==0.13.2
 torch==2.10.0
-tqdm==4.67.2
-wandb==0.24.1
+tqdm==4.67.3
+wandb==0.24.2
 numpy
