@@ -58,7 +58,7 @@ def dst_ground_truth(sea_map, start: tuple = (0,0)):
     for r, c in treasure_cells:
         if np.isinf(dist[r, c]): continue
         paths = enumerate_shortest_paths(sea_map, dist, start, (r, c))
-
+        # todo reward as timestep so that it is discounted correctly
         ground_truth.extend([{
             "observations": observations,
             "actions": actions,
@@ -66,3 +66,9 @@ def dst_ground_truth(sea_map, start: tuple = (0,0)):
             }] for observations, actions in paths)
     print(len(ground_truth))
     return ground_truth
+
+
+def synthetic_stochastic_points(ground_truth: list, num: int = 40, length: int = 100):
+    import random
+    episodes = [episode for point in ground_truth for episode in point]
+    return [random.choices(episodes, k=length) for _ in range(num)]
