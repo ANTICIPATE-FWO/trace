@@ -44,12 +44,15 @@ def main():
     if show: sankey_fig.show()
 
     c_obs, c_ac = aggregate_policies(ac_seq, obs_seq, labels[0])
-    for i in range(len(c_obs)):
-        policy = BayesianPolicy(env_id, alpha=0.5).fit(c_obs[i], c_ac[i])
-        grid_trajectories(c_obs[i], (12,12))
-        fig = grid_arrows(policy, title=f'Behavior Cluster {i+1}: {len(c_obs[i])} episodes', color=colors[0][i])
-        if save: fig.savefig(f"plots/frobenius_conditioned/grid{i}.png")
-        if show: fig.show()
+    for c in range(len(c_obs)):
+        policy = BayesianPolicy(env_id, alpha=0.5).fit(c_obs[c], c_ac[c])
+        title = f'Behavior Cluster {c + 1}: {len(c_obs[c])} episodes'
+        color = colors[0][c]
+        figs = [grid_trajectories(c_obs[c], title=title, color=color),
+                grid_arrows(policy, title=title, color=color)]
+        for i, fig in enumerate(figs):
+            if save: fig.savefig(f"plots/frobenius_conditioned/grid-cluster{c}-{i}.png")
+            if show: fig.show()
 
     un_obs, un_ac = aggregate_policies(ac_seq, obs_seq, [0]*len(ac_seq))
     universal_policy = BayesianPolicy(env_id, alpha=0.5).fit(un_obs[0], un_ac[0])
