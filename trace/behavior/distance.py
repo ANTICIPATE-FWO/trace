@@ -24,8 +24,38 @@ def l2_cost(a, b=None):
 
 
 def frobenius(policies):
-    P = np.stack([p.prob_matrix().ravel() for p in policies])
-    norms = np.sum(P * P, axis=1)
-    dist2 = norms[:, None] + norms[None, :] - 2.0 * P @ P.T
-    dist2 = np.maximum(dist2, 0.0)
-    return np.sqrt(dist2)
+    n = len(policies)
+    D2 = np.zeros((n, n))
+
+    for i in range(n):
+        for j in range(i + 1, n):
+            d2 = 0.0
+            for s in (set(policies[i].counts.keys()) |set(policies[j].counts.keys())):
+                diff = policies[i].action_probs(s) - policies[j].action_probs(s)
+                d2 += diff @ diff
+
+            D2[i, j] = D2[j, i] = d2
+
+    return np.sqrt(D2)
+
+
+def disagreement_rate(p1, p2, min_overlap=3):
+    v1, v2 = p1.get_visited(), p2.get_visited()
+    overlapping_states = set(v1) & set(v2)
+    if (n := len(overlapping_states)) < min_overlap: return np.nan
+
+    disagreement = sum(1 if p1.act(s) != p2.act(s) else 0 for s in overlapping_states)
+    return disagreement / n
+
+
+def overlap(policies):
+    n = len(policies)
+    #todo make this sparse
+    distance_matrix = np.zeros((n, n))
+
+    for i in range(n):
+        for j in range(i+1, n):
+            d = disagreement_rate(policies[i], policies[j])
+            distance_matrix[i,j] = distance_matrix[j,i] = 1.0 if np.isnan(d) else d
+
+    return distance_matrix
