@@ -2,6 +2,9 @@ import numpy as np
 import plotly.graph_objs as go
 import matplotlib.pyplot as plt
 
+
+
+
 colors = [
     [
         'red', 'darkorange', 'gold', 'orangered', 'tomato',
@@ -13,14 +16,18 @@ colors = [
     ]
 ]
 
-def cluster_scatter(data, labels, centers, color_id: int = 0, graph_labels: tuple = None):
+def cluster_scatter(data, labels, color_id: int = 0, graph_labels: tuple = None):
+    if data.shape[1] > 2:
+        from trace.visuals import tsne_transform
+        data = tsne_transform(data)
+
     fig, ax = plt.subplots(figsize=(8, 6))
     c = colors[color_id]
     title, x_label, y_label = graph_labels
 
-    for i in range(np.max(labels) + 1): ax.scatter(data[labels == i, 0], data[labels == i, 1], label=f"Cluster {i + 1}", color=c[i])
-    ax.scatter(centers[:, 0], centers[:, 1], s=50, marker = 'x', label="Centers", color="black")
-
+    for l in set(labels):
+        x, y = data[labels == l, 0], data[labels == l, 1]
+        ax.scatter(x, y, label=f"Cluster {l + 1}", color=c[l])
     ax.set_xlabel(x_label)
     ax.set_ylabel(y_label)
     ax.set_title(title)
