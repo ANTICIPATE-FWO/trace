@@ -1,5 +1,5 @@
 import numpy as np
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, SpectralClustering
 from sklearn.mixture import GaussianMixture, BayesianGaussianMixture
 from sklearn_extra.cluster import KMedoids
 from trace.clustering.auxiliary import reindex_clusters
@@ -8,13 +8,13 @@ from trace.clustering.auxiliary import reindex_clusters
 def k_means(data, k: int = 3):
     kmeans = KMeans(n_clusters=k, random_state=42)
     kmeans.fit(data)
-    return kmeans.labels_, kmeans.cluster_centers_
+    return kmeans.labels_
 
 
 def k_medoids(data, k: int = 3, metric: str = "euclidean"):
     kmedoids = KMedoids(n_clusters=k, metric=metric, init="k-medoids++")
     kmedoids.fit(data)
-    return kmedoids.labels_, kmedoids.cluster_centers_
+    return kmedoids.labels_
 
 
 def gaussian_mixture(data, k: int = 10, covariance_type: str = "full"):
@@ -35,10 +35,10 @@ def gaussian_mixture(data, k: int = 10, covariance_type: str = "full"):
 
         if bic < best_bic: best_bic, best_gmm = bic, gmm
 
-    return best_gmm.predict(data), best_gmm.means_
+    return best_gmm.predict(data)
 
 
-def dirichlet_process_mixture(
+def dirichlet_mixture(
     data,
     k: int = 20,
     covariance_type: str = "full",
@@ -61,4 +61,11 @@ def dirichlet_process_mixture(
     active = dpgmm.weights_ > 1e-3
     #weights = dpgmm.weights_[active]
 
-    return reindex_clusters(dpgmm.predict(data)), dpgmm.means_[active]
+    return reindex_clusters(dpgmm.predict(data))
+
+
+def spectral(distance_matrix, k=3, lam=5.0):
+    similarity_graph = np.exp(-lam * distance_matrix)
+    sc = SpectralClustering(n_clusters=k, affinity='precomputed', assign_labels='kmeans')
+
+    return sc.fit_predict(similarity_graph)

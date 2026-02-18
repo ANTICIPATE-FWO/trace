@@ -35,7 +35,7 @@ def cluster_connections(labels):
     return source, target, value
 
 
-def aggregate_policies(ac_seq, obs_seq, labels):
+def aggregate_policies(obs_seq, ac_seq, labels):
     assert len(ac_seq) == len(obs_seq)
     if isinstance(ac_seq, np.ndarray): ac_seq = ac_seq.tolist()
     if isinstance(obs_seq, np.ndarray): obs_seq = obs_seq.tolist()
