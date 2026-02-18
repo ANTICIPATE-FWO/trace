@@ -9,10 +9,22 @@ env_metadata = {
             3: (0, 1),   # right
         },
         "reward_dim": (2,),
-        "observations_dim": (12, 12)
+        "observations_high": [11, 11],
+        "observations_low": [0, 0],
     },
     "minecart-v0": {
         "ref_point": [-100.0, -100.0, -100.0],
-        "file_prefix": "mc"
+        "file_prefix": "mc",
+        "actions": {
+            0: "Mine",
+            1: "Left",
+            2: "Right",
+            3: "Accelerate",
+            4: "Brake",
+            5: "None"
+        },
+        "reward_dim": (3,),
+        "observations_high": [1., 1., 1., 1., 1., 1., 1.],
+        "observations_low": [-1., -1., -1., -1., -1., -1., -1.],
     }
 }
