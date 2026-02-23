@@ -64,8 +64,10 @@ def dirichlet_mixture(
     return reindex_clusters(dpgmm.predict(data))
 
 
-def spectral(distance_matrix, k=3, lam=5.0):
-    similarity_graph = np.exp(-lam * distance_matrix)
-    sc = SpectralClustering(n_clusters=k, affinity='precomputed', assign_labels='kmeans')
-
-    return sc.fit_predict(similarity_graph)
+def spectral(data, k=3):
+    sc = SpectralClustering(
+        n_clusters=k,
+        affinity='precomputed',
+        assign_labels='kmeans'
+    )
+    return sc.fit_predict(data)

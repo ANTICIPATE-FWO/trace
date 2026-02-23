@@ -55,7 +55,7 @@ def dst_frame():
 def grid_map(observations, space=(11,11), title="Trajectory Density over Grid", alpha=0.05, linewidth=1.0, color='red'):
     frame = dst_frame()
     grid_h, grid_w = space
-    fig, ax = plt.subplots()
+    fig, ax = plt.subplots(figsize=(6, 6))
 
     # map pixels → grid coords
     ax.imshow(frame, extent=[0, grid_w, grid_h, 0])

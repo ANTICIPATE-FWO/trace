@@ -68,7 +68,7 @@ def dst_ground_truth(sea_map, start: tuple = (0,0)):
     return ground_truth
 
 
-def synthetic_stochastic_points(ground_truth: list, num: int = 40, length: int = 100):
+def synthetic_stochastic_points(ground_truth: list, num: int = 100, length: int = 10):
     import random
     episodes = [episode for point in ground_truth for episode in point]
     return [random.choices(episodes, k=length) for _ in range(num)]
