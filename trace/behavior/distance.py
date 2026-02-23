@@ -42,20 +42,30 @@ def frobenius(policies):
 def disagreement_rate(p1, p2, min_overlap=3):
     v1, v2 = p1.get_visited(), p2.get_visited()
     overlapping_states = set(v1) & set(v2)
-    if (n := len(overlapping_states)) < min_overlap: return np.nan
+    if (n := len(overlapping_states)) < min_overlap: return 0.0
 
     disagreement = sum(1 if p1.act(s) != p2.act(s) else 0 for s in overlapping_states)
     return disagreement / n
 
 
-def overlap(policies):
+def agreement_rate(p1, p2, min_overlap=1):
+    v1, v2 = p1.get_visited(), p2.get_visited()
+    overlapping_states = set(v1) & set(v2)
+    if (n := len(overlapping_states)) < min_overlap: return 0.0
+    # is normalizing with the number of overlapping states relevant
+    agreement = sum(1 if p1.act(s) == p2.act(s) else 0 for s in overlapping_states)
+    return agreement / n
+
+
+def overlap(policies, lam=5.0, smoothing=True):
     n = len(policies)
     #todo make this sparse
     distance_matrix = np.zeros((n, n))
 
     for i in range(n):
-        for j in range(i+1, n):
-            d = disagreement_rate(policies[i], policies[j])
-            distance_matrix[i,j] = distance_matrix[j,i] = 1.0 if np.isnan(d) else d
+        for j in range(i, n):
+            d = agreement_rate(policies[i], policies[j])
+            distance_matrix[i,j] = d
+            distance_matrix[j,i] = d
 
-    return distance_matrix
+    return np.exp(-lam * (1-distance_matrix)) if smoothing else distance_matrix
