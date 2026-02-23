@@ -3,12 +3,10 @@ import plotly.graph_objs as go
 import matplotlib.pyplot as plt
 
 
-
-
 colors = [
     [
-        'red', 'darkorange', 'gold', 'orangered', 'tomato',
-        'coral', 'salmon', 'crimson', 'firebrick', 'peru'
+        'red', 'peru', 'gold', 'orangered', 'tomato',
+        'coral', 'salmon', 'crimson', 'firebrick', 'darkorange'
     ],
     [
         'forestgreen', 'cyan', 'darkviolet', 'teal', 'deepskyblue',
@@ -16,10 +14,11 @@ colors = [
     ]
 ]
 
-def cluster_scatter(data, labels, color_id: int = 0, graph_labels: tuple = None):
+
+def cluster_scatter(data, labels, similarity: bool = False, color_id: int = 0, graph_labels: tuple = None):
     if data.shape[1] > 2:
-        from trace.visuals import tsne_transform
-        data = tsne_transform(data)
+        from trace.visuals.tsne import tsne_transform
+        data = tsne_transform(data, similarity=similarity)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     c = colors[color_id]
@@ -32,6 +31,7 @@ def cluster_scatter(data, labels, color_id: int = 0, graph_labels: tuple = None)
     ax.set_ylabel(y_label)
     ax.set_title(title)
     ax.legend()
+    ax.set(xticks=[], yticks=[])
     return fig
 
 
