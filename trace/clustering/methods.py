@@ -11,7 +11,7 @@ def k_means(data, k: int = 3):
     return kmeans.labels_
 
 
-def k_medoids(data, k: int = 3, metric: str = "euclidean"):
+def k_medoids(data, k: int = 3, metric: str = "cosine"):
     kmedoids = KMedoids(n_clusters=k, metric=metric, init="k-medoids++")
     kmedoids.fit(data)
     return kmedoids.labels_

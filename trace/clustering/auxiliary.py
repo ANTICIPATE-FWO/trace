@@ -37,12 +37,12 @@ def cluster_connections(labels):
 
 def aggregate_policies(obs_seq, ac_seq, labels):
     assert len(ac_seq) == len(obs_seq)
+
     if isinstance(ac_seq, np.ndarray): ac_seq = ac_seq.tolist()
     if isinstance(obs_seq, np.ndarray): obs_seq = obs_seq.tolist()
 
     c_ac, c_obs = defaultdict(list), defaultdict(list)
     for ac, obs, lbl in zip(ac_seq, obs_seq, labels):
-
         c_ac[lbl].extend(ac)
         c_obs[lbl].extend(obs)
     keys = sorted(c_ac)
