@@ -20,16 +20,19 @@ def cluster_scatter(data, labels, similarity: bool = False, color_id: int = 0, g
         from trace.visuals.tsne import tsne_transform
         data = tsne_transform(data, similarity=similarity)
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(6, 6))
     c = colors[color_id]
-    title, x_label, y_label = graph_labels
+
 
     for l in set(labels):
         x, y = data[labels == l, 0], data[labels == l, 1]
         ax.scatter(x, y, label=f"Cluster {l + 1}", color=c[l])
-    ax.set_xlabel(x_label)
-    ax.set_ylabel(y_label)
-    ax.set_title(title)
+
+    if graph_labels is not None:
+        title, x_label, y_label = graph_labels
+        ax.set_xlabel(x_label)
+        ax.set_ylabel(y_label)
+        ax.set_title(title)
     ax.legend()
     ax.set(xticks=[], yticks=[])
     return fig
