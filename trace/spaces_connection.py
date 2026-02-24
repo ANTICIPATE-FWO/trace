@@ -9,7 +9,7 @@ from trace.core import  TrajectoryManager, synthetic_stochastic_points
 from trace.clustering import (k_means, k_medoids, spectral, gaussian_mixture, dirichlet_mixture,
                               cluster_connections, aggregate_policies)
 from trace.visuals import sankey, cluster_scatter, colors, grid_map, grid_arrows
-from trace.behavior import BayesianPolicy, frobenius, overlap
+from trace.behavior import BayesianPolicy, distance_matrix
 
 # config
 graph_labels = [('TSNE of Conditioned Policies', 'Dimension 1', 'Dimension 2'),
@@ -29,14 +29,15 @@ def main():
     obs_seq, ac_seq = manager.policy_data(flatten=False, pad=None)
 
     policies = [BayesianPolicy(env_id, alpha=0.5).fit(obs, acs)for obs, acs in zip(obs_seq, ac_seq)]
+    behavior_features = distance_matrix(policies, metric='agreement')
     print(f'Initialized {len(policies)} policies')
 
 
     labels= []
-    for i, data in enumerate([overlap(policies), rewards]):
+    for i, data in enumerate([behavior_features, rewards]):
         labels.append(cluster_functions[i](data, k=k))
 
-        fig = cluster_scatter(data, labels[-1], color_id=i, graph_labels=graph_labels[i])
+        fig = cluster_scatter(data, labels[-1], color_id=i, graph_labels=graph_labels[i], similarity=True)
         if save: fig.savefig(os.path.join(plot_directory, f"scatter{i}.png"))
         if show: fig.show()
 
