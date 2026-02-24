@@ -1,15 +1,15 @@
 from collections import defaultdict
 import numpy as np
 
-def discretize_obs(obs, precision=2):
-    return tuple(round(float(x), precision) for x in obs)
+def discretize_obs(obs, step=0.1):
+    return tuple(round(float(x) / step) * step for x in obs)
 
 def all_ints(lst):
     return all(isinstance(x, int) for x in lst)
 
 class BayesianPolicy:
-    def __init__(self, env_id: str = 'deep-sea-treasure-v0', alpha=1.0, precision=1):
-        self.env_id, self.alpha, self.precision = env_id, alpha, precision
+    def __init__(self, env_id: str = 'deep-sea-treasure-v0', alpha=1.0, step=0.1):
+        self.env_id, self.alpha = env_id, alpha
 
         from trace.core import env_metadata
         self.num_actions = len(env_metadata[env_id]['actions'])
@@ -17,13 +17,13 @@ class BayesianPolicy:
         highs = env_metadata[env_id]['observations_high']
         lows = env_metadata[env_id]['observations_low']
 
-        step = 1 if all_ints(highs) and all_ints(lows) else 10**(-self.precision)
+        self.step = 1 if all_ints(highs) and all_ints(lows) else step
         self.obs_space = [np.arange(l, h+1, step) for l,h in zip(lows, highs)]
         self.counts = defaultdict(lambda: np.zeros(self.num_actions))
 
 
     def update(self, obs, action):
-        key = discretize_obs(obs, precision=self.precision)
+        key = discretize_obs(obs, step=self.step)
         self.counts[key][action] += 1
 
     def obs_shape(self):
@@ -31,6 +31,11 @@ class BayesianPolicy:
 
     def get_action_dims(self):
         return self.num_actions
+
+    def get_actions(self):
+        from trace.core import env_metadata
+        actions = env_metadata[self.env_id]['actions']
+        return list(actions.values())
 
     def get_visited(self):
         return list(self.counts.keys())
@@ -44,7 +49,7 @@ class BayesianPolicy:
         return self
 
     def action_probs(self, obs):
-        key = discretize_obs(obs, precision=self.precision)
+        key = discretize_obs(obs, step=self.step)
         probs = (self.counts[key] + self.alpha)
         return probs / probs.sum()
 
