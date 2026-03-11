@@ -5,7 +5,7 @@ import numpy as np
 np.set_printoptions(suppress=True)
 
 from trace.core import TrajectoryManager
-from trace.clustering import aggregate_policies
+from trace.core.trajectory import aggregate_policies
 
 synthetic_dst_data = [
     # first pareto point

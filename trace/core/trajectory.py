@@ -1,4 +1,4 @@
-from typing import List, Dict, Any
+from collections import defaultdict
 from json import load, dumps
 import numpy as np
 
@@ -27,6 +27,10 @@ class TrajectoryManager:
         self._verify_data()
         return self
 
+    def subset(self, labels):
+        new_trajectories = [point for point, l in zip(self.trajectories, labels) if l]
+        return TrajectoryManager(env_id=self.env_id).load(new_trajectories)
+
     def _verify_data(self):
         # todo include shape assertations
         action_seq = self.sequence(key='actions', flatten=True, pad=None)
@@ -51,11 +55,6 @@ class TrajectoryManager:
             filtered_trajectories.append(filtered_point)
 
         self.trajectories = filtered_trajectories
-
-    def append(self, point: List[Dict[str, Any]]):
-        self.trajectories.append(point)
-        self.point_num = len(self.trajectories)
-        self.episode_num = sum(len(point) for point in self.trajectories)
 
     def rewards_ep(self):
         rewards = []
@@ -93,7 +92,7 @@ class TrajectoryManager:
         if flatten: return np.stack([d for ep in dists for d in ep])
         return dists
 
-    def policy_data(self, pad: int|None = -1, flatten: bool = False):
+    def policy_data(self, pad: int|None = None, flatten: bool = False):
         obs = self.sequence(key="observations", pad=pad, flatten=flatten)
         acs = self.sequence(key="actions", pad=pad, flatten=flatten)
         return obs, acs
@@ -120,3 +119,24 @@ def homogenize(array, pad=-1):
         ]
 
     return fill(array, shape(array))
+
+
+def aggregate_policies(obs, acs, labels):
+    assert len(acs) == len(obs) == len(labels), f'{len(acs)} != {len(obs)} != {len(acs[0])}'
+
+    if isinstance(acs, np.ndarray): acs = acs.tolist()
+    if isinstance(obs, np.ndarray): obs = obs.tolist()
+
+    c_ac, c_obs = defaultdict(list), defaultdict(list)
+    for ac, obs, lbl in zip(acs, obs, labels):
+        c_ac[lbl].extend(ac)
+        c_obs[lbl].extend(obs)
+    keys = sorted(c_ac)
+    return [c_obs[k] for k in keys], [c_ac[k] for k in keys]
+
+
+def tree_features(obs, acs):
+    obs = np.array([coords for episode in obs for coords in episode])
+    acs = np.array([action for episode in acs for action in episode])
+    print(obs.shape, acs.shape)
+    return obs, acs
