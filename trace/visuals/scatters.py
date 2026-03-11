@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 
 colors = [
     [
-        'red', 'peru', 'gold', 'orangered', 'tomato',
+        'red', 'gold', 'peru', 'orangered', 'tomato',
         'coral', 'salmon', 'crimson', 'firebrick', 'darkorange'
     ],
     [
@@ -15,12 +15,12 @@ colors = [
 ]
 
 
-def cluster_scatter(data, labels, similarity: bool = False, color_id: int = 0, graph_labels: tuple = None):
+def cluster_scatter(data, labels, color_id: int = 0, graph_labels: tuple = None):
     if data.shape[1] > 2:
         from trace.visuals.tsne import tsne_transform
-        data = tsne_transform(data, similarity=similarity)
+        data = tsne_transform(data, precomputed=True)
 
-    fig, ax = plt.subplots(figsize=(6, 6))
+    fig, ax = plt.subplots(figsize=(8, 6))
     c = colors[color_id]
 
 
@@ -35,6 +35,7 @@ def cluster_scatter(data, labels, similarity: bool = False, color_id: int = 0, g
         ax.set_title(title)
     ax.legend()
     ax.set(xticks=[], yticks=[])
+    plt.tight_layout()
     return fig
 
 

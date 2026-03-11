@@ -2,16 +2,16 @@ import numpy as np
 from sklearn.manifold import TSNE
 
 
-def tsne_transform(data, similarity: bool = False, perplexity: int = 5):
-    if similarity: assert data.shape[0] == data.shape[1], f"Invalid similarity matrix shape: {data.shape}"
+def tsne_transform(data, precomputed: bool = False, perplexity: int = 10):
+    if precomputed: assert data.shape[0] == data.shape[1], f"Invalid similarity matrix shape: {data.shape}"
 
     tsne = TSNE(
         n_components = 2,
-        perplexity = max(perplexity, (len(data) - 1) // 3),
-        metric = 'precomputed' if similarity else 'euclidean',
-        init = 'random' if similarity else 'pca',
+        perplexity = min(perplexity, len(data)),
+        metric = 'precomputed' if precomputed else 'euclidean',
+        init = 'random' if precomputed else 'pca',
         learning_rate = "auto",
         random_state = 42
     )
 
-    return tsne.fit_transform(1.0 - data) if similarity else tsne.fit_transform(data)
+    return tsne.fit_transform(data)

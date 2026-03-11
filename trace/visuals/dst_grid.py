@@ -12,7 +12,6 @@ def grid_arrows(policy, title: str = "Conditioned Policy (Most Probable Action)"
     u = np.full((len(Y), len(X)), np.nan, dtype=float)
     v = np.full((len(Y), len(X)), np.nan, dtype=float)
 
-
     x0, y0 = X[0], Y[0]
     for state in policy.counts.keys():
         px = policy.action_probs(state)
@@ -50,9 +49,7 @@ def dst_frame():
     return frame
 
 
-
-
-def grid_map(observations, space=(11,11), title="Trajectory Density over Grid", alpha=0.05, linewidth=1.0, color='red'):
+def grid_map(observations, space=(11,11), title="Trajectory Density over Grid", alpha=0.05, linewidth=1.5, color='red'):
     frame = dst_frame()
     grid_h, grid_w = space
     fig, ax = plt.subplots(figsize=(6, 6))
