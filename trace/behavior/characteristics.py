@@ -1,7 +1,7 @@
 from collections import Counter
+from sklearn.tree import DecisionTreeClassifier, export_text
 import numpy as np
 np.set_printoptions(precision=2)
-
 
 def behavior_report(actions: np.ndarray, rewards: np.ndarray, ind: int, max_examples: int = 5):
     n_episodes = actions.shape[0]
@@ -56,4 +56,8 @@ def reward_report(actions:np.ndarray, rewards: np.ndarray, ind: int):
 
     print("=" * 60)
 
-
+def tree_rules(obs, acs, feature_names: list = None):
+    if feature_names is None: feature_names = ['x', 'y']
+    tree = DecisionTreeClassifier(max_depth=4, min_samples_leaf=2)
+    tree.fit(obs, acs)
+    return export_text(tree, feature_names=feature_names)

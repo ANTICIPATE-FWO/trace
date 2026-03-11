@@ -18,7 +18,7 @@ class BayesianPolicy:
         lows = env_metadata[env_id]['observations_low']
 
         self.step = 1 if all_ints(highs) and all_ints(lows) else step
-        self.obs_space = [np.arange(l, h+1, step) for l,h in zip(lows, highs)]
+        self.obs_space = [np.arange(l, h+1, self.step) for l,h in zip(lows, highs)]
         self.counts = defaultdict(lambda: np.zeros(self.num_actions))
 
 

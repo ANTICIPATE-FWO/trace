@@ -1,6 +1,6 @@
 import numpy as np
 
-def distance_matrix(policies, metric='agreement', smoothing=False, lam: float = 5.0):
+def distance_matrix(policies, metric='agreement', smoothing=False, norm=True, lam: float = 5.0):
     assert metric in ('frobenius', 'wasserstein' ,'agreement')
 
     n = len(policies)
@@ -15,20 +15,21 @@ def distance_matrix(policies, metric='agreement', smoothing=False, lam: float = 
 
             d = 0.0
             if metric == 'frobenius':
-                mat_i = [policies[i].action_probs(s) for s in overlap]
-                mat_j = [policies[j].action_probs(s) for s in overlap]
+                mat_i = [policies[i].action_probs(s) for s in vi|vj]
+                mat_j = [policies[j].action_probs(s) for s in vi|vj]
                 d = frobenius(mat_i, mat_j)
-            if metric == 'wasserstein':
+            elif metric == 'wasserstein':
                 cost = l2_cost(policies[i].get_actions(), policies[j].get_actions())
                 for s in overlap:
                     d += wasserstein(policies[i].action_probs(s), policies[j].action_probs(s), cost)
                 d /= len(overlap)
-            if metric == 'agreement':
+            elif metric == 'agreement':
                 for s in overlap:
                     d += 1 if policies[i].act(s) != policies[j].act(s) else 0
                 d /= len(overlap)
-            dist_mat[i, j] = dist_mat[j, i] = d
 
+            dist_mat[i, j] = dist_mat[j, i] = d
+    if norm: dist_mat = (dist_mat - dist_mat.min()) / (dist_mat.max() - dist_mat.min())
     return np.exp(-lam * (1-dist_mat)) if smoothing else dist_mat
 
 
@@ -62,7 +63,4 @@ def frobenius(mat1, mat2):
     assert mat1.shape == mat2.shape, f'{mat1.shape} != {mat2.shape}'
 
     diff = mat1 - mat2
-    d = np.sum(diff * diff)
-
-    d /= (2 * mat1.shape[0])
-    return np.sqrt(d)
+    return np.sqrt(np.sum(diff * diff))
