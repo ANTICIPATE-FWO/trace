@@ -13,8 +13,8 @@ def main():
     env, eval_env, ref_point, file_prefix, actions = initialize_setting(env_id=env_id)
     filepath =f"data/{file_prefix}_{method}.json"
 
-    #TrajectoryManager(env_id).load(dst_ground_truth(eval_env.unwrapped.sea_map)).save(filepath)
-    #print(f'Saved ground truth trajectories in {filepath}.')
+    TrajectoryManager(env_id).load(dst_ground_truth(eval_env.unwrapped.sea_map)).save(filepath)
+    print(f'Saved ground truth trajectories in {filepath}.')
 
 
     method = "ipro"
