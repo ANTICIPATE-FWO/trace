@@ -138,5 +138,4 @@ def aggregate_policies(obs, acs, labels):
 def tree_features(obs, acs):
     obs = np.array([coords for episode in obs for coords in episode])
     acs = np.array([action for episode in acs for action in episode])
-    print(obs.shape, acs.shape)
     return obs, acs

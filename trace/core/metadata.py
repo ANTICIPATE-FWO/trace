@@ -28,3 +28,13 @@ env_metadata = {
         "observations_low": [-1., -1., -1., -1., -1., -1., -1.],
     }
 }
+colors = [
+    [
+        'red', 'gold', 'peru', 'orangered', 'tomato',
+        'coral', 'salmon', 'crimson', 'firebrick', 'darkorange'
+    ],
+    [
+        'forestgreen', 'cyan', 'darkviolet', 'teal', 'deepskyblue',
+        'dodgerblue', 'royalblue', 'slateblue', 'mediumseagreen', 'turquoise'
+    ]
+]
