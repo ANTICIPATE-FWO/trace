@@ -58,6 +58,10 @@ def reward_report(actions:np.ndarray, rewards: np.ndarray, ind: int):
 
 def tree_rules(obs, acs, feature_names: list = None):
     if feature_names is None: feature_names = ['x', 'y']
-    tree = DecisionTreeClassifier(max_depth=4, min_samples_leaf=2)
+    tree = DecisionTreeClassifier(
+        max_depth=3,
+        min_samples_leaf=20,
+        ccp_alpha=0.01
+    )
     tree.fit(obs, acs)
     return export_text(tree, feature_names=feature_names)
