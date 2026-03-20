@@ -4,14 +4,13 @@ np.set_printoptions(threshold=10000, suppress=True)
 import os
 os.chdir("..")
 
-from trace.core import  TrajectoryManager
+from trace.core import  TrajectoryManager, colors, aggregate_policies
 from trace.clustering import k_means, k_medoids, spectral, gaussian_mixture, dirichlet_mixture, cluster_connections
-from trace.core.trajectory import aggregate_policies
-from trace.visuals import sankey, cluster_scatter, colors, grid_map, grid_arrows
+from trace.visuals import sankey, cluster_scatter, grid_trajectories, grid_arrows
 from trace.behavior import BayesianPolicy, distance_matrix
 
 # config
-metric = 'frobenius'
+metric = 'agreement'
 k=2
 
 filepath  = "data/38_dst_ipro.json"
@@ -23,14 +22,15 @@ save, show = True, False
 graph_labels = [(f'TSNE of Conditioned Policies ({metric} metric)', '', ''),
                 ('Total reward of episode', 'Treasure', 'Time'),]
 
+
 def main():
     manager = TrajectoryManager(env_id).load(filepath)
     rewards = manager.accrued_reward()
-    obs_seq, ac_seq = manager.policy_data(flatten=False, pad=None)
+    obs_seq, ac_seq = manager.policy_data(flatten=True, pad=None)
 
-    policies = [BayesianPolicy(env_id, alpha=0.5).fit(obs, acs)for obs, acs in zip(obs_seq, ac_seq)]
+    policies = [BayesianPolicy(env_id, alpha=0.5).fit(obs, acs) for obs, acs in zip(obs_seq, ac_seq)]
     behavior_features = distance_matrix(policies, metric=metric)
-    print(f'Initialized {len(policies)} policies')
+    print(f'\rInitialized {len(policies)} policies')
 
     labels, figs = [], []
     for i, data in enumerate([behavior_features, rewards]):
@@ -48,14 +48,14 @@ def main():
         policy = BayesianPolicy(env_id, alpha=0.5).fit(c_obs[c], c_ac[c])
         title = f'Behavior Cluster {c + 1}: {len(c_obs[c])} episodes'
         color = colors[0][c]
-        figs.append((grid_map(c_obs[c], title=title, color=color, alpha=0.01), f"trajectory{c}.png"))
+        figs.append((grid_trajectories(c_obs[c], title=title, color=color, alpha=0.01), f"trajectory{c}.png"))
         figs.append((grid_arrows(policy, title=title, color=color), f"arrows{c}.png"))
 
     obs_univ, acs_univ = aggregate_policies(obs_seq, ac_seq, [0] * len(policies))
     policy_univ = BayesianPolicy(env_id, alpha=0.5).fit(obs_univ[0], acs_univ[0])
 
     title = f'Universal Policy: {len(obs_univ[0])} episodes'
-    figs.append((grid_map(obs_univ[0], title=title, color='white'), "trajectory_universal.png"))
+    figs.append((grid_trajectories(obs_univ[0], title=title, color='white'), "trajectory_universal.png"))
     figs.append((grid_arrows(policy_univ, title=title), "arrows_universal.png"))
 
     if save:
