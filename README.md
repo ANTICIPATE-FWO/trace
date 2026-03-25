@@ -39,7 +39,10 @@ strategies in an effort to translate complex stochastic Pareto fronts to policym
 - **visuals**: plotting functions mainly to identify patterns from the formed clusters
 
 An abstracted high-level flow chart of the mechanism:
-<p align=center> <img title="Abstract flowchart" alt="TRACE pipeline" src="plots/sketches/pipeline.png"> 
+<p align="center">
+  <img src="plots/sketches/pipeline.png" 
+       style="background-color: white;" />
+</p>
 
 ## 💭 Behavior Modeling
 
