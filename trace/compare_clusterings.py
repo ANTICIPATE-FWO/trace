@@ -6,6 +6,7 @@ from beautifultable import BeautifulTable
 from trace.core import TrajectoryManager, aggregate_policies, tree_features
 from trace.clustering import k_medoids
 from trace.behavior import BayesianPolicy, distance_matrix, tree_rules, component_labels
+from trace.visuals import decision_tree
 
 os.chdir('../')
 np.set_printoptions(threshold=10000, suppress=True, precision=3)
@@ -15,10 +16,10 @@ warnings.filterwarnings("ignore")
 filepath  = "data/38_dst_ipro.json"
 env_id = 'deep-sea-treasure-v0'
 cluster=k_medoids
-k = 3
+k = 2
 
 
-def sparse_action_clarity(obs, acs, env_id):
+def sparse_action_clarity(obs:list|np.ndarray, acs:list|np.ndarray, env_id:str):
     policy = BayesianPolicy(env_id, alpha=0.5).fit(obs, acs)
     total_states = np.prod([len(axis) for axis in policy.obs_space], dtype=int)
     if (visited_states := len(policy.counts)) == 0: return 0.0
@@ -32,7 +33,7 @@ def sparse_action_clarity(obs, acs, env_id):
 
 
 
-def sparse_action_clarity_entropy(obs, acs, env_id, eps=1e-12):
+def sparse_action_clarity_entropy(obs:list|np.ndarray, acs:list|np.ndarray, env_id:str, eps:float=1e-12):
     policy = BayesianPolicy(env_id, alpha=0.5).fit(obs, acs)
     total_states = np.prod([len(axis) for axis in policy.obs_space], dtype=int)
     if (visited_states := len(policy.counts)) == 0: return 0.0
@@ -74,16 +75,6 @@ def main():
             entr.append(sparse_action_clarity_entropy(obs, acs, env_id))
         table.append_row([method, np.array(var), np.array(entr)])
     print(table)
-
-    print('Rules')
-    # todo return metrix and / or fig
-    c_id = 1
-    for obs, acs in zip(*aggregate_policies(obs_seq, ac_seq, cl_labels[0])):
-        print(f'Cluster id {c_id}')
-        print(tree_rules(*tree_features(obs, acs)))
-        c_id += 1
-
-
 
 
 
