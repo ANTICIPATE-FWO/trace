@@ -2,8 +2,6 @@ from collections import defaultdict
 from json import load, dumps
 import numpy as np
 
-from trace.core import discount
-
 class TrajectoryManager:
     def __init__(self, env_id:str):
         self.trajectories  = []
@@ -139,3 +137,9 @@ def tree_features(obs, acs):
     obs = np.array([coords for episode in obs for coords in episode])
     acs = np.array([action for episode in acs for action in episode])
     return obs, acs
+
+
+def discount(ar: np.ndarray, gamma: float = 0.99):
+    if not isinstance(ar, np.ndarray): ar = np.array(ar)
+    discounts = gamma ** np.arange(ar.shape[0], dtype=np.float32)
+    return (ar * discounts[:, None]).sum(axis=0)
