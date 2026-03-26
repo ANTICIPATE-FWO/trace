@@ -30,7 +30,7 @@ Install requirements with `pip install -r requirements.txt`<br>
 ```
 
 ## 🧠 About
-TRACE analyzes pareto-optimal trajectories collected SOTA MORl algorithms and clusters them to create discrete decisive
+TRACE analyzes pareto-optimal trajectories collected by SOTA MORl algorithms and clusters them into discrete decisive
 strategies in an effort to translate complex stochastic Pareto fronts to policymakers. It consists of five modules:
 - **behavior**: bayesian conditioning, distance features, similarity network, statistics reports
 - **clustering**: k-means, k-medoids, gaussian/dirichlet mixture models, spectral
@@ -38,11 +38,8 @@ strategies in an effort to translate complex stochastic Pareto fronts to policym
 - **morl_baselines**: code files adapted from the public repository [morl-baselines](https://github.com/LucasAlegre/morl-baselines) with minimal to support trajectory tracking. Credits are due to the original creators of each morl method.
 - **visuals**: plotting functions mainly to identify patterns from the formed clusters
 
-An abstracted high-level flow chart of the mechanism:
-<p align="center">
-  <img src="plots/sketches/pipeline.png" 
-       style="background-color: white;" />
-</p>
+An abstract high-level flow chart of the mechanism:
+<p align="center"> <img src="plots/sketches/pipeline.png"/> </p>
 
 ## 💭 Behavior Modeling
 
