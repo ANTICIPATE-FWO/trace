@@ -8,6 +8,13 @@ env_metadata = {
             2: (0, -1),  # left
             3: (0, 1),   # right
         },
+        "action_names": {
+            0: 'up',
+            1: 'down',
+            2: 'left',
+            3: 'right',
+        },
+        'feature_names': ['y', 'x'],
         "reward_dim": (2,),
         "observations_high": [11, 11],
         "observations_low": [0, 0],
