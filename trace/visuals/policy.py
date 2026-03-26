@@ -2,10 +2,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from trace.core import env_metadata, colors
-from trace.visuals.utils import dst_frame, tsne_transform
+from trace.visuals.utils import dst_frame, tsne_transform, tree_to_graph
+
+import networkx as nx
+from networkx.drawing.nx_pydot import graphviz_layout
+from sklearn.tree import DecisionTreeClassifier
 
 
-def temporal_alignment(sequences, title: str = "Temporal Alignment"):
+def temporal_alignment(sequences, env_id:str, title: str = "Temporal Alignment"):
     unique_values = sorted(set(val for seq in sequences for val in seq))
     value_to_int = {val: i for i, val in enumerate(unique_values)}
 
@@ -21,8 +25,11 @@ def temporal_alignment(sequences, title: str = "Temporal Alignment"):
     fig, ax = plt.subplots(figsize=(12, 4))
     im = ax.imshow(matrix, aspect='auto', cmap=cmap)
 
-    cbar = fig.colorbar(im, ax=ax, ticks=range(len(unique_values)))
-    cbar.ax.set_yticklabels(unique_values)
+    tick_positions = list(range(len(unique_values)))
+    tick_labels = [env_metadata[env_id]['action_names'][value] for value in unique_values]
+
+    cbar = fig.colorbar(im, ax=ax, ticks=tick_positions)
+    cbar.ax.set_yticklabels(tick_labels)
 
     if len(sequences) < 10:
         for i in range(matrix.shape[0]):
@@ -33,7 +40,7 @@ def temporal_alignment(sequences, title: str = "Temporal Alignment"):
                         ha='center', va='center', color='black'
                     )
 
-    ax.set(xticks=[], yticks=[], title=title)
+    ax.set(xlabel='Time steps',yticks=[], title=title)
     fig.tight_layout()
 
     return fig
@@ -60,7 +67,8 @@ def grid_arrows(policy, title: str = "Conditioned Policy (Most Probable Action)"
     ax.quiver(X, Y, u, v, angles="xy", scale_units="xy", scale=1, width=0.015, color=color)
     ax.set_aspect('equal')
     ax.invert_yaxis()
-    ax.set(title=title, xlabel='y', ylabel='x', grid=True)
+    ax.set(title=title, xlabel='y', ylabel='x')
+    ax.grid()
     fig.tight_layout()
 
     return fig
@@ -110,4 +118,26 @@ def cluster_scatter(data, labels, color_id: int = 0, graph_labels: tuple = None)
     ax.grid()
     ax.tick_params(labelbottom=False, labelleft=False)
     fig.tight_layout()
+    return fig
+
+
+def decision_tree(obs: list, acs: list, env_id: str|None=None, max_depth:int=3, title:str|None=None):
+    feature_names = [f"x{i}" for i in range(len(obs[0]))] if env_id else env_metadata[env_id]['feature_names']
+    action_names = None if env_id else env_metadata[env_id]["action_names"]
+
+    clf = DecisionTreeClassifier(max_depth=max_depth, min_samples_leaf=20, ccp_alpha=0.01)
+    clf.fit(obs, acs)
+
+    graph, node_labels, edge_labels, _ = tree_to_graph(clf.tree_, clf.classes_, feature_names, action_names)
+    pos = graphviz_layout(graph, prog="dot")
+
+    fig, ax = plt.subplots()
+    nx.draw(graph, pos, ax=ax, with_labels=False, node_size=3500, node_color='darkorange',)
+    nx.draw_networkx_labels(graph, pos, labels=node_labels, ax=ax, font_size=10)
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, ax=ax, font_size=9)
+
+    if title is not None: ax.set_title(title)
+    ax.axis("off")
+    fig.tight_layout()
+
     return fig
