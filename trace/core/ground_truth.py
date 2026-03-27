@@ -2,19 +2,17 @@ from collections import deque
 import numpy as np
 
 from trace.core import env_metadata
-ACTIONS = env_metadata['deep-sea-treasure-v0']['actions']
 
 
-def shortest_distances(sea_map, start):
+def shortest_distances(sea_map:np.ndarray, start:tuple, env_id:str='deep-sea-treasure-v0'):
     h, w = sea_map.shape
     dist = np.full((h, w), np.inf)
     dist[start] = 0
-
     q = deque([start])
 
     while q:
         r, c = q.popleft()
-        for dr, dc in ACTIONS.values():
+        for dr, dc in env_metadata[env_id]['action_mapping'].values():
             nr, nc = r + dr, c + dc
             if 0 <= nr < h and 0 <= nc < w:
                 if sea_map[nr, nc] != -10. :
@@ -24,7 +22,8 @@ def shortest_distances(sea_map, start):
     return dist
 
 
-def enumerate_shortest_paths(sea_map, dist, start, target):
+def enumerate_shortest_paths(sea_map:np.ndarray, dist:np.ndarray, start:tuple, target:tuple,
+                             env_id:str='deep-sea-treasure-v0'):
     h, w = sea_map.shape
     paths = []
 
@@ -34,7 +33,7 @@ def enumerate_shortest_paths(sea_map, dist, start, target):
             return
 
         r, c = pos
-        for a, (dr, dc) in ACTIONS.items():
+        for a, (dr, dc) in env_metadata[env_id]['action_mapping'].items():
             nr, nc = r + dr, c + dc
             if 0 <= nr < h and 0 <= nc < w:
                 if sea_map[nr, nc] != -10.:
@@ -49,8 +48,7 @@ def enumerate_shortest_paths(sea_map, dist, start, target):
     return paths
 
 
-
-def dst_ground_truth(sea_map, start: tuple = (0,0)):
+def dst_ground_truth(sea_map:np.ndarray, start:tuple = (0,0)):
     dist = shortest_distances(sea_map, start)
     treasure_cells = np.argwhere(sea_map > 0)
     ground_truth = []
@@ -64,7 +62,6 @@ def dst_ground_truth(sea_map, start: tuple = (0,0)):
             "actions": actions,
             "rewards": [sea_map[r, c], -int(dist[r, c])],
             }] for observations, actions in paths)
-    print(len(ground_truth))
     return ground_truth
 
 

@@ -26,7 +26,7 @@ def temporal_alignment(sequences, env_id:str, title: str = "Temporal Alignment")
     im = ax.imshow(matrix, aspect='auto', cmap=cmap)
 
     tick_positions = list(range(len(unique_values)))
-    tick_labels = [env_metadata[env_id]['action_names'][value] for value in unique_values]
+    tick_labels = [env_metadata[env_id]['actions'][value] for value in unique_values]
 
     cbar = fig.colorbar(im, ax=ax, ticks=tick_positions)
     cbar.ax.set_yticklabels(tick_labels)
@@ -46,9 +46,9 @@ def temporal_alignment(sequences, env_id:str, title: str = "Temporal Alignment")
     return fig
 
 
-def grid_arrows(policy, title: str = "Conditioned Policy (Most Probable Action)", color: str = "black"):
+def grid_arrows(policy, title: str = None, color: str = "black"):
     assert policy.env_id == 'deep-sea-treasure-v0', f'Cannot visualize grid for environment {policy.env_id}'
-    dst_actions = env_metadata['deep-sea-treasure-v0']['actions']
+    action_mapping = env_metadata[policy.env_id]['action_mapping']
     X, Y = policy.obs_space
 
     u = np.full((len(Y), len(X)), np.nan, dtype=float)
@@ -61,13 +61,14 @@ def grid_arrows(policy, title: str = "Conditioned Policy (Most Probable Action)"
 
         y, x = state
         iy, ix = int(y - y0), int(x - x0)
-        u[iy, ix], v[iy, ix] = dst_actions[np.argmax(px)]
+        u[iy, ix], v[iy, ix] = action_mapping[np.argmax(px)]
 
     fig, ax = plt.subplots(figsize=(6, 6))
     ax.quiver(X, Y, u, v, angles="xy", scale_units="xy", scale=1, width=0.015, color=color)
     ax.set_aspect('equal')
     ax.invert_yaxis()
-    ax.set(title=title, xlabel='y', ylabel='x')
+    if title is not None:
+        ax.set(title=title, xlabel='y', ylabel='x')
     ax.grid()
     fig.tight_layout()
 
@@ -98,8 +99,8 @@ def grid_trajectories(observations, space=(11,11), title="Trajectory Density ove
     return fig
 
 
-def cluster_scatter(data, labels, color_id: int = 0, graph_labels: tuple = None):
-    if data.shape[1] > 2: data = tsne_transform(data, precomputed=True)
+def cluster_scatter(data, labels, color_id: int=0, graph_labels: tuple=None, precomputed: bool=True):
+    if data.shape[1] > 2: data = tsne_transform(data, precomputed=precomputed)
 
     fig, ax = plt.subplots(figsize=(8, 6))
     c = colors[color_id]
@@ -121,9 +122,9 @@ def cluster_scatter(data, labels, color_id: int = 0, graph_labels: tuple = None)
     return fig
 
 
-def decision_tree(obs: list, acs: list, env_id: str|None=None, max_depth:int=3, title:str|None=None):
-    feature_names = [f"x{i}" for i in range(len(obs[0]))] if env_id else env_metadata[env_id]['feature_names']
-    action_names = None if env_id else env_metadata[env_id]["action_names"]
+def decision_tree(obs: list, acs: list, env_id: str|None=None, max_depth: int=8, title: str|None=None):
+    feature_names = env_metadata[env_id]['feature_names'] if env_id else [f"x{i}" for i in range(len(obs[0]))]
+    action_names = env_metadata[env_id]["actions"] if env_id else None
 
     clf = DecisionTreeClassifier(max_depth=max_depth, min_samples_leaf=20, ccp_alpha=0.01)
     clf.fit(obs, acs)

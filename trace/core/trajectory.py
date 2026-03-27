@@ -11,9 +11,10 @@ class TrajectoryManager:
         from trace.core import env_metadata
         self.metadata = env_metadata[env_id]
         self.num_actions = len(self.metadata['actions'])
-        self.action_mapping = {a: i for i, a in enumerate(self.metadata['actions'].keys())}
 
-    def load(self, source, filtering=False):
+
+
+    def load(self, source, filtering:bool=False):
         if isinstance(source, str): self.trajectories = load(open(source, "rb"))
         elif isinstance(source, list): self.trajectories = source
         else: raise ValueError(f"Unknown source type: {type(source)}")
@@ -25,7 +26,7 @@ class TrajectoryManager:
         self._verify_data()
         return self
 
-    def subset(self, labels):
+    def subset(self, labels:list):
         new_trajectories = [point for point, l in zip(self.trajectories, labels) if l]
         return TrajectoryManager(env_id=self.env_id).load(new_trajectories)
 
@@ -41,15 +42,11 @@ class TrajectoryManager:
         filtered_trajectories = []
 
         for point in self.trajectories:
-            filtered_point, seen = [], set()
-
+            filtered_point, seen_episodes = [], set()
             for episode in point:
-                key = dumps(episode, sort_keys=True)
-
-                if key not in seen:
-                    seen.add(key)
+                if (episode_str := dumps(episode, sort_keys=True)) not in seen_episodes:
+                    seen_episodes.add(episode_str)
                     filtered_point.append(episode)
-
             filtered_trajectories.append(filtered_point)
 
         self.trajectories = filtered_trajectories
@@ -59,11 +56,11 @@ class TrajectoryManager:
         for point in self.trajectories:
             for episode in point:
                 r = np.asarray(episode["rewards"], dtype=np.float32)
-                rewards.append(r if r.ndim==1 else r.sum(axis=0))
+                rewards.append(r if r.ndim==1 else np.sum(r, axis=0))
 
         return np.array(rewards)
 
-    def accrued_reward(self, gamma: float = 0.99):
+    def accrued_reward(self, gamma: float=0.99):
         return np.array([
             np.mean([
                 discount(episode["rewards"], gamma) for episode in point
@@ -71,26 +68,27 @@ class TrajectoryManager:
             for point in self.trajectories
         ])
 
-    def sequence(self, key: str = "actions", pad: int|None = -1, flatten: bool = False):
+    def sequence(self, key: str='actions', pad: int|None=-1, flatten: bool=False):
         seq = [[episode[key] for episode in point] for point in self.trajectories]
         if flatten: seq = [episode for point in seq for episode in point]
         if pad: return np.array(homogenize(seq))
         return seq
 
-    def distribution(self, key: str = "actions", normalize: bool = True, flatten: bool = False):
-        dists = []
+    def distribution(self, key: str="actions", normalize: bool=True, flatten: bool=False):
+        assert all_ints(self.metadata['actions'].keys()), 'Cannot split to distribution for non-int actions'
 
+        dists = []
         for point in self.trajectories:
             dists.append([])
             for episode in point:
                 counts = np.zeros(self.num_actions)
-                for v in episode[key]: counts[self.action_mapping[v]] += 1
-                if normalize: counts /= counts.sum()
+                for v in episode[key]: counts[v] += 1
+                if normalize: counts /= np.sum(counts)
                 dists[-1].append(counts)
         if flatten: return np.stack([d for ep in dists for d in ep])
         return dists
 
-    def policy_data(self, pad: int|None = None, flatten: bool = False):
+    def policy_data(self, pad: int|None = None, flatten: bool=False):
         obs = self.sequence(key="observations", pad=pad, flatten=flatten)
         acs = self.sequence(key="actions", pad=pad, flatten=flatten)
         return obs, acs
@@ -99,16 +97,16 @@ class TrajectoryManager:
         with open(filepath, "w") as f: f.write(dumps(self.trajectories, indent=2))
 
 
-def homogenize(array, pad=-1):
-    def shape(x):
+def homogenize(array:list, pad:int=-1):
+    def homogenous_shape(x):
         if not isinstance(x, list): return ()
-        sub = [shape(i) for i in x]
+        sub_array = [homogenous_shape(i) for i in x]
         return (len(x),) + tuple(
-            max((s[d] if d < len(s) else 0) for s in sub)
-            for d in range(max(map(len, sub), default=0))
+            max((s[d] if d < len(s) else 0) for s in sub_array)
+            for d in range(max(map(len, sub_array), default=0))
         )
 
-    def fill(x, shp):
+    def fill(x, shp:tuple):
         if not shp: return x
         x = x if isinstance(x, list) else []
         return [
@@ -116,11 +114,11 @@ def homogenize(array, pad=-1):
             for i in range(shp[0])
         ]
 
-    return fill(array, shape(array))
+    return fill(array, homogenous_shape(array))
 
 
-def aggregate_policies(obs, acs, labels):
-    assert len(acs) == len(obs) == len(labels), f'{len(acs)} != {len(obs)} != {len(acs[0])}'
+def aggregate_policies(obs:list|np.ndarray, acs:list|np.ndarray, labels:list):
+    assert len(acs) == len(obs) == len(labels), f'Shape mismatch {len(acs)} != {len(obs)} != {len(acs[0])}'
 
     if isinstance(acs, np.ndarray): acs = acs.tolist()
     if isinstance(obs, np.ndarray): obs = obs.tolist()
@@ -130,16 +128,21 @@ def aggregate_policies(obs, acs, labels):
         c_ac[lbl].extend(ac)
         c_obs[lbl].extend(obs)
     keys = sorted(c_ac)
+
     return [c_obs[k] for k in keys], [c_ac[k] for k in keys]
 
 
-def tree_features(obs, acs):
+def tree_features(obs:list|np.ndarray, acs:list|np.ndarray):
     obs = np.array([coords for episode in obs for coords in episode])
     acs = np.array([action for episode in acs for action in episode])
     return obs, acs
 
 
-def discount(ar: np.ndarray, gamma: float = 0.99):
+def discount(ar: np.ndarray, gamma: float=0.99):
     if not isinstance(ar, np.ndarray): ar = np.array(ar)
     discounts = gamma ** np.arange(ar.shape[0], dtype=np.float32)
-    return (ar * discounts[:, None]).sum(axis=0)
+    return np.sum(ar * discounts[:, None], axis=0)
+
+
+def all_ints(lst:list):
+    return all(isinstance(x, int) for x in lst)

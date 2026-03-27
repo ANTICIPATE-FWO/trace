@@ -3,7 +3,7 @@ import warnings
 import os
 from beautifultable import BeautifulTable
 
-from trace.core import TrajectoryManager, aggregate_policies, tree_features
+from trace.core import TrajectoryManager, aggregate_policies
 from trace.clustering import k_medoids
 from trace.behavior import BayesianPolicy, distance_matrix, tree_rules, component_labels
 from trace.visuals import decision_tree

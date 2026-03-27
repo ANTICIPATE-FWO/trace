@@ -9,7 +9,7 @@ def tsne_transform(data, precomputed: bool = False, perplexity: int = 30):
 
     tsne = TSNE(
         n_components = 2,
-        perplexity = min(perplexity, len(data)),
+        perplexity = min(perplexity, len(data)-1),
         metric = 'precomputed' if precomputed else 'euclidean',
         init = 'random' if precomputed else 'pca',
         learning_rate = "auto",

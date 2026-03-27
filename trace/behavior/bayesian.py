@@ -1,11 +1,12 @@
 from collections import defaultdict
 import numpy as np
 
+from trace.core.trajectory import all_ints
+
+
 def discretize_obs(obs, step=0.1):
     return tuple(round(float(x) / step) * step for x in obs)
 
-def all_ints(lst):
-    return all(isinstance(x, int) for x in lst)
 
 class BayesianPolicy:
     def __init__(self, env_id: str = 'deep-sea-treasure-v0', alpha=1.0, step=0.1):
@@ -34,8 +35,7 @@ class BayesianPolicy:
 
     def get_actions(self):
         from trace.core import env_metadata
-        actions = env_metadata[self.env_id]['actions']
-        return list(actions.values())
+        return list(env_metadata[self.env_id]['actions'].values())
 
     def get_visited(self):
         return list(self.counts.keys())
@@ -51,7 +51,7 @@ class BayesianPolicy:
     def action_probs(self, obs):
         key = discretize_obs(obs, step=self.step)
         probs = (self.counts[key] + self.alpha)
-        return probs / probs.sum()
+        return probs / np.sum(probs)
 
     def act(self, obs, deterministic=True):
         probs = self.action_probs(obs)
