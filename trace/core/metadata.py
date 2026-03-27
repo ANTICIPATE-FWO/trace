@@ -2,13 +2,13 @@ env_metadata = {
     "deep-sea-treasure-v0": {
         "ref_point": [-100.0, -100.0],
         "file_prefix": "dst",
-        "actions": {
-            0: (-1, 0),  # up
-            1: (1, 0),   # down
-            2: (0, -1),  # left
-            3: (0, 1),   # right
+        "action_mapping": {
+            0: (-1, 0),
+            1: (1, 0),
+            2: (0, -1),
+            3: (0, 1),
         },
-        "action_names": {
+        "actions": {
             0: 'up',
             1: 'down',
             2: 'left',
@@ -30,6 +30,7 @@ env_metadata = {
             4: "Brake",
             5: "None"
         },
+        "feature_names": ["x", "y", "speed", "sin", "cos", "ore1load", "ore2load"],
         "reward_dim": (3,),
         "observations_high": [1., 1., 1., 1., 1., 1., 1.],
         "observations_low": [-1., -1., -1., -1., -1., -1., -1.],
