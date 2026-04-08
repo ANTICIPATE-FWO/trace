@@ -1,0 +1,58 @@
+#file: noinspection YAMLSchemaValidation
+deep-sea-treausure-v0:
+  env_id: 'deep-sea-treausure-v0'
+  ref_point: [ -100.0, -100.0 ]
+  file_prefix: 'dst'
+  actions:
+    0: 'up'
+    1: 'down'
+    2: 'left'
+    3: 'right'
+  action_mapping:
+    - (-1, 0)
+    - (1, 0)
+    - (0, -1)
+    - (0, 1)
+  reward_dim: (2,)
+  observations_features: ['y', 'x']
+  observations_high: [11, 11]
+  observations_low: [0, 0]
+  gamma: 1.0
+
+minecart-v0:
+  env_id: 'minecart-v0'
+  ref_point: [-1.0, -1.0, -200.0]
+  file_prefix: 'minecart'
+  actions:
+    0: 'Mine'
+    1: 'Left'
+    2: 'Right'
+    3: 'Accelerate'
+    4: 'Brake'
+    5: 'None'
+  reward_dim: (3,)
+  observations_features: ['x', 'y', 'speed', 'sin', 'cos', 'ore1load', 'ore2load']
+  observations_high: [1., 1., 1., 1., 1., 1., 1.]
+  observations_low: [-1., -1., -1., -1., -1., -1., -1.]
+  gamma: 0.98
+
+deep-sea-treasure-concave-v0:
+  env_id: 'deep-sea-treasure-concave-v0'
+  ref_point: [0, -50]
+  file_prefix: 'dst'
+  actions:
+    0: 'up'
+    1: 'down'
+    2: 'left'
+    3: 'right'
+  action_mapping:
+    - (-1, 0)
+    - (1, 0)
+    - (0, -1)
+    - (0, 1)
+  reward_dim: (2,)
+  observations_features: [ 'y', 'x' ]
+  observations_high: [ 11, 11 ]
+  observations_low: [ 0, 0 ]
+  gamma: 1.0
+
