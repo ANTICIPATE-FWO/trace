@@ -1,41 +1,31 @@
 from collections import defaultdict
 import numpy as np
 
-from trace.core.trajectory import all_ints
-
-
-def discretize_obs(obs, step=0.1):
-    return tuple(round(float(x) / step) * step for x in obs)
+from trace.core import all_ints, discretize
 
 
 class BayesianPolicy:
-    def __init__(self, env_id: str = 'deep-sea-treasure-v0', alpha=1.0, step=0.1):
-        self.env_id, self.alpha = env_id, alpha
+    def __init__(self, metadata: dict, alpha: float=1.0, step: float=0.1):
+        self.alpha = alpha
+        self.env_id, self.actions = metadata['env_id'], metadata['actions']
 
-        from trace.core import env_metadata
-        self.num_actions = len(env_metadata[env_id]['actions'])
-
-        highs = env_metadata[env_id]['observations_high']
-        lows = env_metadata[env_id]['observations_low']
-
+        highs, lows = metadata['observations_high'], metadata['observations_low']
         self.step = 1 if all_ints(highs) and all_ints(lows) else step
         self.obs_space = [np.arange(l, h+1, self.step) for l,h in zip(lows, highs)]
-        self.counts = defaultdict(lambda: np.zeros(self.num_actions))
-
+        self.counts = defaultdict(lambda: np.zeros(len(self.actions)))
 
     def update(self, obs, action):
-        key = discretize_obs(obs, step=self.step)
+        key = discretize(obs, step=self.step)
         self.counts[key][action] += 1
 
     def obs_shape(self):
         return [dim.shape[0] for dim in self.obs_space]
 
     def get_action_dims(self):
-        return self.num_actions
+        return len(self.actions)
 
     def get_actions(self):
-        from trace.core import env_metadata
-        return list(env_metadata[self.env_id]['actions'].values())
+        return list(self.actions.values())
 
     def get_visited(self):
         return list(self.counts.keys())
@@ -49,7 +39,7 @@ class BayesianPolicy:
         return self
 
     def action_probs(self, obs):
-        key = discretize_obs(obs, step=self.step)
+        key = discretize(obs, step=self.step)
         probs = (self.counts[key] + self.alpha)
         return probs / np.sum(probs)
 
@@ -57,4 +47,4 @@ class BayesianPolicy:
         probs = self.action_probs(obs)
 
         if deterministic: return int(probs.argmax())
-        return int(np.random.choice(self.num_actions, p=probs))
+        return int(np.random.choice(len(self.actions), p=probs))

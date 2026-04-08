@@ -1,10 +1,10 @@
-from collections import deque
 import numpy as np
 
-from trace.core import env_metadata
+from collections import deque
+from rnadom import choices
 
 
-def shortest_distances(sea_map:np.ndarray, start:tuple, env_id:str='deep-sea-treasure-v0'):
+def shortest_distances(sea_map: np.ndarray, start: tuple, action_mapping: dict):
     h, w = sea_map.shape
     dist = np.full((h, w), np.inf)
     dist[start] = 0
@@ -12,7 +12,7 @@ def shortest_distances(sea_map:np.ndarray, start:tuple, env_id:str='deep-sea-tre
 
     while q:
         r, c = q.popleft()
-        for dr, dc in env_metadata[env_id]['action_mapping'].values():
+        for dr, dc in action_mapping:
             nr, nc = r + dr, c + dc
             if 0 <= nr < h and 0 <= nc < w:
                 if sea_map[nr, nc] != -10. :
@@ -22,8 +22,7 @@ def shortest_distances(sea_map:np.ndarray, start:tuple, env_id:str='deep-sea-tre
     return dist
 
 
-def enumerate_shortest_paths(sea_map:np.ndarray, dist:np.ndarray, start:tuple, target:tuple,
-                             env_id:str='deep-sea-treasure-v0'):
+def enumerate_shortest_paths(sea_map: np.ndarray, dist: np.ndarray, start: tuple, target: tuple, action_mapping: dict):
     h, w = sea_map.shape
     paths = []
 
@@ -33,7 +32,7 @@ def enumerate_shortest_paths(sea_map:np.ndarray, dist:np.ndarray, start:tuple, t
             return
 
         r, c = pos
-        for a, (dr, dc) in env_metadata[env_id]['action_mapping'].items():
+        for a, (dr, dc) in action_mapping.items():
             nr, nc = r + dr, c + dc
             if 0 <= nr < h and 0 <= nc < w:
                 if sea_map[nr, nc] != -10.:
@@ -48,24 +47,23 @@ def enumerate_shortest_paths(sea_map:np.ndarray, dist:np.ndarray, start:tuple, t
     return paths
 
 
-def dst_ground_truth(sea_map:np.ndarray, start:tuple = (0,0)):
-    dist = shortest_distances(sea_map, start)
+def dst_ground_truth(sea_map: np.ndarray, start: tuple = (0,0), action_mapping: dict):
+    dist = shortest_distances(sea_map, start, action_mapping)
     treasure_cells = np.argwhere(sea_map > 0)
     ground_truth = []
 
     for r, c in treasure_cells:
         if np.isinf(dist[r, c]): continue
-        paths = enumerate_shortest_paths(sea_map, dist, start, (r, c))
-        # todo reward as timestep so that it is discounted correctly
-        ground_truth.extend([{
-            "observations": observations,
-            "actions": actions,
-            "rewards": [sea_map[r, c], -int(dist[r, c])],
-            }] for observations, actions in paths)
+        paths = enumerate_shortest_paths(sea_map, dist, start, (r, c), action_mapping)
+        for observations, actions in paths:
+            ground_truth.append([{
+                "observations": observations,
+                "actions": actions,
+                "rewards": [[0, -1] for _ in range(int(dist[r, c]) - 1)] + [[sea_map[r, c], -1]],
+            }])
     return ground_truth
 
 
-def synthetic_stochastic_points(ground_truth: list, num: int = 100, length: int = 10):
-    import random
+def synthetic_stochastic_points(ground_truth: list, num: int=100, length: int=10):
     episodes = [episode for point in ground_truth for episode in point]
-    return [random.choices(episodes, k=length) for _ in range(num)]
+    return [choices(episodes, k=length) for _ in range(num)]

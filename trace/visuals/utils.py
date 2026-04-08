@@ -4,7 +4,7 @@ import numpy as np
 from sklearn.manifold import TSNE
 
 
-def tsne_transform(data, precomputed: bool = False, perplexity: int = 30):
+def tsne_transform(data, precomputed: bool=False, perplexity: int=30):
     if precomputed: assert data.shape[0] == data.shape[1], f"Invalid similarity matrix shape: {data.shape}"
 
     tsne = TSNE(
@@ -19,24 +19,23 @@ def tsne_transform(data, precomputed: bool = False, perplexity: int = 30):
     return tsne.fit_transform(data)
 
 
-def dst_frame():
+def env_frame(env_id: str):
     import warnings
     import mo_gymnasium as mo_gym
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
 
-        render_env = mo_gym.make("deep-sea-treasure-v0", render_mode="rgb_array")
+        render_env = mo_gym.make(env_id, render_mode="rgb_array")
         render_env.reset()
         frame = render_env.render()
 
     return frame
 
 
-def tree_to_graph(tree, actions, feature_names, action_names=None, collapse=True, root=0):
+def tree_to_graph(tree, actions: dict, feature_names: dict, action_names: dict=None, collapse: bool=True, root: int=0):
     graph = nx.DiGraph()
-    node_labels, edge_labels = {}, {}
-    node_ids = count()
+    node_labels, edge_labels, node_ids = {}, {}, count()
 
     def build(node_idx):
         left, right = tree.children_left[node_idx], tree.children_right[node_idx]
@@ -52,8 +51,7 @@ def tree_to_graph(tree, actions, feature_names, action_names=None, collapse=True
         left_id, left_pred = build(left)
         right_id, right_pred = build(right)
 
-        if collapse and left_pred == right_pred:
-            return left_id, left_pred
+        if collapse and left_pred == right_pred: return left_id, left_pred
 
         node_id = next(node_ids)
         graph.add_node(node_id)

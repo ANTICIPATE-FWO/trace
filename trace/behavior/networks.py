@@ -2,8 +2,7 @@ import numpy as np
 import networkx as nx
 
 
-def similarity_graph(sim_matrix: np.ndarray|list, threshold: float = 0.5):
-    if not isinstance(sim_matrix, np.ndarray): sim_matrix = np.array(sim_matrix)
+def similarity_graph(sim_matrix: np.ndarray, threshold: float = 0.5):
     assert sim_matrix.shape[0] == sim_matrix.shape[1], "Matrix must be square"
 
     n = sim_matrix.shape[0]
@@ -13,21 +12,22 @@ def similarity_graph(sim_matrix: np.ndarray|list, threshold: float = 0.5):
     for i in range(n):
         for j in range(i+1, n):
             if sim_matrix[i, j] >= threshold and i != j: graph.add_edge(i, j)
+
     return graph
 
 
 def connectivity_sweep(sim_matrix: np.ndarray|list, step: float = 0.1):
-    num_components = []
-    thresholds = [step*i for i in range(int(1 / step))]
+    num_components, thresholds = [], [step*i for i in range(int(1 / step))]
     assert len(thresholds) > 0, f'Empty threshold list, {step} step invalid'
+
     for t in thresholds:
-        graph = similarity_graph(sim_matrix, t)
+        graph = similarity_graph(np.array(sim_matrix), t)
         num_components.append(nx.number_connected_components(graph))
+
     return num_components
 
 
-def component_labels(sim_matrix: np.ndarray|list, threshold: float = 0.5):
-    if not isinstance(sim_matrix, np.ndarray): sim_matrix = np.array(sim_matrix)
+def component_labels(sim_matrix: np.ndarray, threshold: float = 0.5):
     assert sim_matrix.shape[0] == sim_matrix.shape[1], "Matrix must be square"
 
     graph = similarity_graph(sim_matrix, threshold)

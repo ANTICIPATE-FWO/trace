@@ -1,23 +1,23 @@
-from collections import defaultdict
 from json import load, dumps
 import numpy as np
 
-class TrajectoryManager:
-    def __init__(self, env_id:str):
-        self.trajectories  = []
-        self.env_id = env_id
-        self.point_num, self.episode_num = 0, 0
+from trace.core.auxiliary import homogenize, discount, all_ints
 
-        from trace.core import env_metadata
-        self.metadata = env_metadata[env_id]
+
+class TrajectoryManager:
+    def __init__(self, metadata: dict):
+        self.metadata = metadata
+        self.env_id = metadata['env_id']
         self.num_actions = len(self.metadata['actions'])
 
-
+        self.trajectories = []
+        self.point_num, self.episode_num = 0, 0
+    
 
     def load(self, source, filtering:bool=False):
-        if isinstance(source, str): self.trajectories = load(open(source, "rb"))
+        if isinstance(source, str): self.trajectories = load(open(source, 'rb'))
         elif isinstance(source, list): self.trajectories = source
-        else: raise ValueError(f"Unknown source type: {type(source)}")
+        else: raise ValueError(f'Unknown source type: {type(source)}')
 
         if filtering: self._filter_duplicates()
 
@@ -28,17 +28,18 @@ class TrajectoryManager:
 
     def subset(self, labels:list):
         new_trajectories = [point for point, l in zip(self.trajectories, labels) if l]
-        return TrajectoryManager(env_id=self.env_id).load(new_trajectories)
+        return TrajectoryManager(metadata=self.metadata).load(new_trajectories)
 
     def _verify_data(self):
         # todo include shape assertations
         action_seq = self.sequence(key='actions', flatten=True, pad=None)
-        assert all(a in self.metadata["actions"] for ep in action_seq for a in ep)
+        assert all(a in self.metadata['actions'] for ep in action_seq for a in ep)
 
     def __len__(self):
         return len(self.trajectories)
 
     def _filter_duplicates(self):
+        # todo auxiliary and out of class
         filtered_trajectories = []
 
         for point in self.trajectories:
@@ -51,19 +52,10 @@ class TrajectoryManager:
 
         self.trajectories = filtered_trajectories
 
-    def rewards_ep(self):
-        rewards = []
-        for point in self.trajectories:
-            for episode in point:
-                r = np.asarray(episode["rewards"], dtype=np.float32)
-                rewards.append(r if r.ndim==1 else np.sum(r, axis=0))
-
-        return np.array(rewards)
-
-    def accrued_reward(self, gamma: float=0.99):
+    def accrue(self, key: str='rewards', gamma: float=0.99):
         return np.array([
             np.mean([
-                discount(episode["rewards"], gamma) for episode in point
+                discount(episode[key], gamma) for episode in point
             ], axis=0)
             for point in self.trajectories
         ])
@@ -74,7 +66,7 @@ class TrajectoryManager:
         if pad: return np.array(homogenize(seq))
         return seq
 
-    def distribution(self, key: str="actions", normalize: bool=True, flatten: bool=False):
+    def distribution(self, key: str='actions', normalize: bool=True, flatten: bool=False):
         assert all_ints(self.metadata['actions'].keys()), 'Cannot split to distribution for non-int actions'
 
         dists = []
@@ -88,61 +80,13 @@ class TrajectoryManager:
         if flatten: return np.stack([d for ep in dists for d in ep])
         return dists
 
-    def policy_data(self, pad: int|None = None, flatten: bool=False):
-        obs = self.sequence(key="observations", pad=pad, flatten=flatten)
-        acs = self.sequence(key="actions", pad=pad, flatten=flatten)
-        return obs, acs
+    def policy_data(self, pad: int|None = None, flatten: bool=False, gamma: float=0.99):
+        obs = self.sequence(key='observations', pad=pad, flatten=flatten)
+        acs = self.sequence(key='actions', pad=pad, flatten=flatten)
+        rew = self.accrue(key='rewards', gamma=gamma)
+        return obs, acs, rew
 
     def save(self, filepath: str):
-        with open(filepath, "w") as f: f.write(dumps(self.trajectories, indent=2))
+        with open(filepath, 'w') as f: f.write(dumps(self.trajectories, indent=2))
 
 
-def homogenize(array:list, pad:int=-1):
-    def homogenous_shape(x):
-        if not isinstance(x, list): return ()
-        sub_array = [homogenous_shape(i) for i in x]
-        return (len(x),) + tuple(
-            max((s[d] if d < len(s) else 0) for s in sub_array)
-            for d in range(max(map(len, sub_array), default=0))
-        )
-
-    def fill(x, shp:tuple):
-        if not shp: return x
-        x = x if isinstance(x, list) else []
-        return [
-            fill(x[i] if i < len(x) else pad, shp[1:])
-            for i in range(shp[0])
-        ]
-
-    return fill(array, homogenous_shape(array))
-
-
-def aggregate_policies(obs:list|np.ndarray, acs:list|np.ndarray, labels:list):
-    assert len(acs) == len(obs) == len(labels), f'Shape mismatch {len(acs)} != {len(obs)} != {len(acs[0])}'
-
-    if isinstance(acs, np.ndarray): acs = acs.tolist()
-    if isinstance(obs, np.ndarray): obs = obs.tolist()
-
-    c_ac, c_obs = defaultdict(list), defaultdict(list)
-    for ac, obs, lbl in zip(acs, obs, labels):
-        c_ac[lbl].extend(ac)
-        c_obs[lbl].extend(obs)
-    keys = sorted(c_ac)
-
-    return [c_obs[k] for k in keys], [c_ac[k] for k in keys]
-
-
-def tree_features(obs:list|np.ndarray, acs:list|np.ndarray):
-    obs = np.array([coords for episode in obs for coords in episode])
-    acs = np.array([action for episode in acs for action in episode])
-    return obs, acs
-
-
-def discount(ar: np.ndarray, gamma: float=0.99):
-    if not isinstance(ar, np.ndarray): ar = np.array(ar)
-    discounts = gamma ** np.arange(ar.shape[0], dtype=np.float32)
-    return np.sum(ar * discounts[:, None], axis=0)
-
-
-def all_ints(lst:list):
-    return all(isinstance(x, int) for x in lst)
