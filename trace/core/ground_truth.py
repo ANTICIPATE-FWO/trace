@@ -1,7 +1,7 @@
 import numpy as np
 
 from collections import deque
-from rnadom import choices
+from random import choices
 
 
 def shortest_distances(sea_map: np.ndarray, start: tuple, action_mapping: dict):
@@ -47,7 +47,7 @@ def enumerate_shortest_paths(sea_map: np.ndarray, dist: np.ndarray, start: tuple
     return paths
 
 
-def dst_ground_truth(sea_map: np.ndarray, start: tuple = (0,0), action_mapping: dict):
+def dst_ground_truth(sea_map: np.ndarray, action_mapping: dict, start: tuple = (0,0)):
     dist = shortest_distances(sea_map, start, action_mapping)
     treasure_cells = np.argwhere(sea_map > 0)
     ground_truth = []
