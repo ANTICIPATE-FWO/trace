@@ -458,6 +458,7 @@ class NLMOPPO(MOPolicy):
         u_func: Callable[[torch.Tensor], torch.Tensor],
         pref: torch.Tensor = None,
         deterministic: bool = False,
+        eval_episodes: int = 100,
     ) -> tuple[ndarray[Any, dtype[floating[Any]]], list[Any]]:
         """Main training loop."""
         self.u_func = u_func
@@ -497,5 +498,4 @@ class NLMOPPO(MOPolicy):
                     },
                     step=global_step,
                 )
-
-        return self.policy_evaluate(eval_env, deterministic=deterministic)
+        return self.policy_evaluate(eval_env, deterministic=deterministic, eval_episodes=eval_episodes)

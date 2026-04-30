@@ -148,6 +148,7 @@ class IPRO(OuterLoop):
         extrema: Optional[tuple[np.ndarray, np.ndarray]] = None,
         deterministic: bool = False,
         eval_env: Optional[gym.Env] = None,
+        eval_episodes: int = 100
     ) -> tuple[list[Subsolution], bool]:
         """Run the initialisation phase of the algorithm.
 
@@ -168,12 +169,14 @@ class IPRO(OuterLoop):
                     weight_vec=weight_vec,
                     deterministic=deterministic,
                     eval_env=eval_env,
+                    eval_episodes=eval_episodes
                 )
                 print(f"Found solution {ideal_vec} for weight vector {weight_vec}")
                 nadir_vec, _, nadir_traj = self.linear_train(
                     weight_vec=-1 * weight_vec,
                     deterministic=deterministic,
                     eval_env=eval_env,
+                    eval_episodes=eval_episodes
                 )
                 ideal_vec *= self.sign
                 nadir_vec *= self.sign

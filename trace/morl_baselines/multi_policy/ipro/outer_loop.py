@@ -260,6 +260,7 @@ class OuterLoop(MOAgent):
         extrema: Optional[tuple[np.ndarray, np.ndarray]] = None,
         deterministic: bool = False,
         eval_env: Optional[gym.Env] = None,
+        eval_episodes: int = 100
     ) -> tuple[list[Subsolution], bool]:
         """Initialize the outer loop."""
         raise NotImplementedError
@@ -310,13 +311,13 @@ class OuterLoop(MOAgent):
         """Check and add to the completed set if possible."""
         raise NotImplementedError
 
-    def replay(self, vec: np.ndarray, sol: Any, traj:Any, iter_pairs: list[Subsolution]) -> list[Subsolution]:
+    def replay(self, vec: np.ndarray, sol: Any, traj:Any, iter_pairs: list[Subsolution], eval_episodes:int=100) -> list[Subsolution]:
         """Replay the algorithm while accounting for the non-optimal Pareto oracle."""
         replay_triggered = self.replay_triggered
         nadir, ideal = self.nadir, self.ideal
         self.reset()
         self.replay_triggered = replay_triggered + 1
-        self.init_phase(extrema=(nadir, ideal), eval_env=None)
+        self.init_phase(extrema=(nadir, ideal), eval_env=None, eval_episodes=eval_episodes)
         idx = 0
         new_subsolutions = []
 
@@ -364,6 +365,7 @@ class OuterLoop(MOAgent):
         weight_vec: np.ndarray,
         deterministic: bool,
         eval_env: gym.Env,
+        eval_episodes: int = 100,
     ) -> tuple[ndarray[Any, dtype[floating[Any]]], Any, list[Any]]:
         """Train the agent using linear scalarization."""
         if self.reset_agent:
@@ -371,7 +373,7 @@ class OuterLoop(MOAgent):
 
         weights = torch.tensor(weight_vec, device=self.device, dtype=torch.float32)
         u_func = partial(linear_scalarization, weights=weights)
-        vec, traj = self.agent.train(eval_env, u_func, pref=weights, deterministic=deterministic)
+        vec, traj = self.agent.train(eval_env, u_func, pref=weights, deterministic=deterministic, eval_episodes=eval_episodes)
         return vec, self.agent.agent, traj
 
     def oracle_train(
@@ -379,6 +381,7 @@ class OuterLoop(MOAgent):
         referent: np.ndarray,
         deterministic: bool,
         eval_env: gym.Env,
+        eval_episodes: int = 100,
     ) -> tuple[ndarray[Any, dtype[floating[Any]]], Any, list[Any]]:
         """Train the agent using the Augmented Achievement Scalarizing Function (AASF)."""
         if self.reset_agent:
@@ -389,7 +392,7 @@ class OuterLoop(MOAgent):
         ideal = self.sign * torch.tensor(self.ideal, device=self.device, dtype=torch.float32)
 
         u_func = partial(aasf, referent=referent, nadir=nadir, ideal=ideal, aug=self.aug, scale=self.scale)
-        vec, traj = self.agent.train(eval_env, u_func, pref=referent, deterministic=deterministic)
+        vec, traj = self.agent.train(eval_env, u_func, pref=referent, deterministic=deterministic, eval_episodes=eval_episodes)
         vec *= self.sign
         return vec, self.agent.agent, traj
 
@@ -400,6 +403,7 @@ class OuterLoop(MOAgent):
         deterministic: bool = False,
         extrema: Optional[tuple[np.ndarray, np.ndarray]] = None,
         callback: Optional[IPROCallback] = None,
+        eval_episodes: int = 100,
     ) -> list[tuple[np.ndarray, Any]]:
         """Solve the problem."""
         self.ref_point = ref_point
@@ -425,17 +429,18 @@ class OuterLoop(MOAgent):
                 referent=subproblem.referent,
                 deterministic=deterministic,
                 eval_env=eval_env,
+                eval_episodes=eval_episodes,
             )
 
             if strict_pareto_dominates(vec, subproblem.referent):
                 if np.any(batched_strict_pareto_dominates(vec, np.vstack((self.pf, self.completed)))):
-                    subsolutions = self.replay(vec, sol, traj, subsolutions)
+                    subsolutions = self.replay(vec, sol, traj, subsolutions, eval_episodes=eval_episodes)
                 else:
                     self.update_found(subproblem, vec)
                     subsolutions.append((subproblem, vec, sol, traj))
             else:
                 if np.any(batched_strict_pareto_dominates(vec, self.completed)):
-                    subsolutions = self.replay(vec, sol, traj, subsolutions)
+                    subsolutions = self.replay(vec, sol, traj, subsolutions, eval_episodes=eval_episodes)
                 else:
                     self.update_not_found(subproblem, vec)
                     subsolutions.append((subproblem, vec, sol, traj))
