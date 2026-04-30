@@ -7,15 +7,15 @@ os.chdir('../')
 from beautifultable import BeautifulTable
 from yaml import safe_load
 
-from trace.core import TrajectoryManager, aggregate_policies
+from trace.core import TrajectoryManager, aggregate_policies, traj_dict
 from trace.clustering import k_medoids
 from trace.behavior import BayesianPolicy, distance_matrix, component_labels
 
 # config
-filepath  = "data/3_mc_ipro.json" # "data/38_dst_ipro.json"
+filepath  = "data/dst_ground_truth.json" # "data/38_dst_ipro.json"
 metadata_filepath = "trace/configs/environments.yaml"
-env_id = 'minecart-v0'
-cluster, k = k_medoids, 2
+env_id = 'deep-sea-treasure-concave-v0'
+cluster, k = k_medoids, 3
 
 
 def sparse_action_clarity(obs: list|np.ndarray, acs: list|np.ndarray, metadata: dict):
@@ -36,7 +36,7 @@ def sparse_action_clarity_entropy(obs: list|np.ndarray, acs: list|np.ndarray, me
     total_states = np.prod([len(axis) for axis in policy.obs_space], dtype=int)
     if (visited_states := len(policy.counts)) == 0: return 0.0
 
-    max_entropy = np.log(policy.num_actions)
+    max_entropy = np.log(len(metadata['actions']))
     decisiveness = []
     for s in policy.counts.keys():
         p = policy.action_probs(s)
@@ -53,7 +53,17 @@ def main():
     metadata = safe_load(open(metadata_filepath, "r"))[env_id]
 
     manager = TrajectoryManager(metadata).load(filepath)
-    obs_seq, ac_seq = manager.policy_data(flatten=False, pad=None)
+    obs_seq, ac_seq, rew_acc = manager.policy_data(flatten=False, pad=None)
+
+    if 'ground_truth' in filepath:
+        rewards = manager.sequence(key='rewards')
+        unique = list(set(str(r) for r in rew_acc))
+        labels = [unique.index(str(r)) for r in rew_acc]
+        observations, actions, rewards = aggregate_policies(obs_seq, ac_seq, rewards, labels)
+        manager = TrajectoryManager(metadata).load(traj_dict(obs_seq, ac_seq, rewards))
+        obs_seq, ac_seq, rew_seq = manager.policy_data(flatten=False, pad=None)
+
+
 
     #dists = manager.distribution(key='actions')
     policies = [BayesianPolicy(metadata, alpha=0.5).fit(obs, acs)
@@ -71,7 +81,7 @@ def main():
     table.column_headers = ["Method", "Variance", "Entropy"]
     for labels, method in [nx_labels, cl_labels, rnd_labels, uni_labels]:
         var, entr = [], []
-        for obs, acs in zip(*aggregate_policies(obs_seq, ac_seq, labels)):
+        for obs, acs, _ in zip(*aggregate_policies(obs_seq, ac_seq, rew_seq, labels)):
             var.append(sparse_action_clarity(obs, acs, metadata))
             entr.append(sparse_action_clarity_entropy(obs, acs, metadata))
 

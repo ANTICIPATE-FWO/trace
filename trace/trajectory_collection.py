@@ -12,42 +12,52 @@ from trace.core import TrajectoryManager
 
 def main():
     env_id = "deep-sea-treasure-concave-v0"
+    iter_total_timesteps = 1_000_000
     metadata = safe_load(open("trace/configs/environments.yaml", "r"))[env_id]
 
-    env, eval_env = initialize_setting(env_id=env_id)
-    ref_point, file_prefix = metadata['ref_point'], metadata['file_prefix']
+    ref_point = metadata['ref_point']
+    file_prefix = metadata['file_prefix']
+    gamma = metadata['gamma']
+    num_steps = metadata['num_steps']
+    tolerance = metadata['tolerance']
+    eval_episodes = metadata['eval_episodes']
 
+    env, eval_env = initialize_setting(env_id=env_id)
     """
     method = 'ground_truth'
     filepath =f"data/{file_prefix}_{method}.json"
-    TrajectoryManager(env_id).load(dst_ground_truth(eval_env.unwrapped.sea_map, metadata['action_mapping'])).save(filepath)
+    TrajectoryManager(metadata).load(dst_ground_truth(eval_env.unwrapped.sea_map, metadata['action_mapping'])).save(filepath)
     print(f'Saved ground truth trajectories in {filepath}.')
     
     return
-    """
+"""
 
     method = "ipro"
     filepath = f"data/{file_prefix}_{method}.json"
     ipro = IPRO(
         env=env,
         direction="maximize",
-        tolerance=0,
+        tolerance=tolerance,
         max_iterations=None,
-        iter_total_timesteps=500_000,
-        num_steps=50,
+        iter_total_timesteps=iter_total_timesteps,
+        num_steps=num_steps,
         device="cpu",
         log=False,
         seed=0,
-        gamma=1.0
+        gamma=gamma
     )
     print('Initialized environment and algorithm.')
-
+    print(eval_episodes)
     pareto_set = ipro.train(
         eval_env=eval_env,
         ref_point=ref_point,
-        deterministic=False,
+        deterministic=eval_episodes==1,
+        eval_episodes=eval_episodes,
     )
-    TrajectoryManager(metadata).load([traj for _, _, traj in pareto_set]).save(filepath)
+    manager = TrajectoryManager(metadata).load([traj for _, _, traj in pareto_set])
+    print(manager.sequence('observations')[0])
+
+    manager.save(filepath)
     print(f'Saved Pareto trajectories in {filepath}.')
     print(f'\nIPRO Pareto front points:')
 

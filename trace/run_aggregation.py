@@ -8,7 +8,7 @@ from yaml import safe_load
 from trace.core import TrajectoryManager
 
 env_id = 'minecart-v0'
-traj_filepaths = ['data/3.2_mc_ipro.json', 'data/3_mc_ipro.json']
+traj_filepaths = ['data/3.2_minecart_ipro.json', 'data/3_minecart_ipro.json', 'data/2m_minecart_ipro.json']
 metadata_filepath = "trace/configs/environments.yaml"
 
 def pareto_filter(points: np.ndarray):
