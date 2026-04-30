@@ -1,7 +1,8 @@
 from json import load, dumps
 import numpy as np
 
-from trace.core.auxiliary import homogenize, discount, all_ints
+from trace.core.auxiliary import homogenize
+from core import discount, all_ints
 
 
 class TrajectoryManager:
@@ -9,6 +10,7 @@ class TrajectoryManager:
         self.metadata = metadata
         self.env_id = metadata['env_id']
         self.num_actions = len(self.metadata['actions'])
+        self.gamma = metadata['gamma']
 
         self.trajectories = []
         self.point_num, self.episode_num = 0, 0
@@ -52,7 +54,8 @@ class TrajectoryManager:
 
         self.trajectories = filtered_trajectories
 
-    def accrue(self, key: str='rewards', gamma: float=0.99):
+    def accrue(self, key: str='rewards', gamma: float|None=None):
+        if not gamma: gamma = self.gamma
         return np.array([
             np.mean([
                 discount(episode[key], gamma) for episode in point
@@ -60,7 +63,7 @@ class TrajectoryManager:
             for point in self.trajectories
         ])
 
-    def sequence(self, key: str='actions', pad: int|None=-1, flatten: bool=False):
+    def sequence(self, key: str='actions', pad: int|None=None, flatten: bool=False):
         seq = [[episode[key] for episode in point] for point in self.trajectories]
         if flatten: seq = [episode for point in seq for episode in point]
         if pad: return np.array(homogenize(seq))
@@ -80,13 +83,21 @@ class TrajectoryManager:
         if flatten: return np.stack([d for ep in dists for d in ep])
         return dists
 
-    def policy_data(self, pad: int|None = None, flatten: bool=False, gamma: float=0.99):
+    def policy_data(self, pad: int|None=None, flatten: bool=False):
         obs = self.sequence(key='observations', pad=pad, flatten=flatten)
         acs = self.sequence(key='actions', pad=pad, flatten=flatten)
-        rew = self.accrue(key='rewards', gamma=gamma)
+        rew = self.accrue(key='rewards')
         return obs, acs, rew
 
     def save(self, filepath: str):
         with open(filepath, 'w') as f: f.write(dumps(self.trajectories, indent=2))
 
-
+def traj_dict(obs, acs, rew):
+    return [
+        [{
+        'observations': obs_episode,
+        'actions': acs_episode,
+        'rewards': rew_episode,
+        } for obs_episode, acs_episode, rew_episode in zip(obs_point, acs_point, rew_point)]
+        for obs_point, acs_point, rew_point in zip(obs, acs, rew)
+    ]

@@ -12,7 +12,7 @@ def shortest_distances(sea_map: np.ndarray, start: tuple, action_mapping: dict):
 
     while q:
         r, c = q.popleft()
-        for dr, dc in action_mapping:
+        for dr, dc in action_mapping.values():
             nr, nc = r + dr, c + dc
             if 0 <= nr < h and 0 <= nc < w:
                 if sea_map[nr, nc] != -10. :
