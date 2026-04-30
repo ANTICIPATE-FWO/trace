@@ -89,7 +89,7 @@ def grid_arrows(policy, action_mapping: dict, title: str = None, color: str = "b
     return fig
 
 
-def grid_trajectories(obs: list|np.ndarray, space: tuple=(11,11), title: str|None=None, alpha: float=0.05, color: str='red'):
+def grid_trajectories(obs: list|np.ndarray, acs: list|np.ndarray, space: tuple=(11,11), title: str|None=None, alpha: float=0.1, color: str='red'):
     # todo include minecart with extra argument
     frame = env_frame("deep-sea-treasure-v0")
     grid_h, grid_w = space
@@ -112,7 +112,7 @@ def grid_trajectories(obs: list|np.ndarray, space: tuple=(11,11), title: str|Non
     return fig
 
 
-def minecart_trajectories(observations: list|np.ndarray, actions: list|np.ndarray, space:tuple=(100, 100),
+def minecart_trajectories(observations: list|np.ndarray, actions: list|np.ndarray, space:tuple=(100, 100), mines:list|None=None,
                           title:str|None=None, alpha=0.05, color='red', mine_color='blue'):
     frame = env_frame("minecart-v0")
     grid_h, grid_w = space
@@ -136,8 +136,12 @@ def minecart_trajectories(observations: list|np.ndarray, actions: list|np.ndarra
         for p, a in zip(obs, act):
             if a == 0:
                 y, x = discretize(p[:2], step)
-                ax.scatter(x * grid_w, y * grid_h, marker='x',
-                           color=mine_color, s=30)
+                ax.scatter(x * grid_w, y * grid_h, marker='x', color=mine_color, s=30)
+
+    if mines is not None:
+        for m in mines:
+            y, x = discretize(m, step)
+            ax.scatter(x * grid_w, y * grid_h, marker='o', color='yellow', s=30)
 
     ax.set_aspect('equal')
     ax.axis("off")
@@ -150,7 +154,6 @@ def minecart_trajectories(observations: list|np.ndarray, actions: list|np.ndarra
 def cluster_scatter(data, labels, colors : list, title: str|None=None, precomputed: bool=True):
     if data.shape[1] > 2: data = tsne_transform(data, precomputed=precomputed)
     fig, ax = plt.subplots(figsize=(8, 6))
-
 
     for l in set(labels):
         x, y = data[labels == l, 0], data[labels == l, 1]
@@ -165,18 +168,19 @@ def cluster_scatter(data, labels, colors : list, title: str|None=None, precomput
 
 
 def decision_tree(obs: list, acs: list, metadata: dict, max_depth: int=8, title: str|None=None):
-    feature_names, action_names = metadata['feature_names'], metadata['action_names']
+    assert len(obs) == len(acs), f'Length of observations {len(obs)} does not match length of actions {len(acs)}.'
+    observations_features, action_names = metadata['observations_features'], metadata['actions']
 
     clf = DecisionTreeClassifier(max_depth=max_depth, min_samples_leaf=20, ccp_alpha=0.01)
     clf.fit(obs, acs)
 
-    graph, node_labels, edge_labels, _ = tree_to_graph(clf.tree_, clf.classes_, feature_names, action_names)
+    graph, node_labels, edge_labels, _ = tree_to_graph(clf.tree_, clf.classes_, observations_features, action_names)
     pos = graphviz_layout(graph, prog="dot")
 
     fig, ax = plt.subplots()
-    nx.draw(graph, pos, ax=ax, with_labels=False, node_size=3500, node_color='darkorange',)
-    nx.draw_networkx_labels(graph, pos, labels=node_labels, ax=ax, font_size=10)
-    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, ax=ax, font_size=9)
+    nx.draw(graph, pos, ax=ax, with_labels=False, node_color='white',)
+    nx.draw_networkx_labels(graph, pos, labels=node_labels, ax=ax)
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, ax=ax)
 
     ax.axis("off")
     if title is not None: ax.set_title(title)

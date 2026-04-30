@@ -5,12 +5,12 @@ from plotly import graph_objs as go
 def pareto_2d(points: np.ndarray, ground_truth: np.ndarray|None = None, title: str|None = None):
     assert points.shape[1] == 2, f'Visualization not possible for {points.shape[1]} dimensions'
     fig, ax = plt.subplots(figsize=(8, 6))
-    ax.scatter(points[:, 0], points[:, 1], s=40, label="Pareto Front", color="black")
+    ax.scatter(points[:, 0], points[:, 1], s=40, label="Coverage set")
 
     if ground_truth is not None:
         assert ground_truth.shape[1] == 2,\
             f'Visualization not possible for {ground_truth.shape[1]} dimensions (ground truth)'
-        ax.scatter(ground_truth[:, 0], ground_truth[:, 1], s=40, label="Ground Truth")
+        ax.scatter(ground_truth[:, 0], ground_truth[:, 1], s=40, label="Ground truth pareto")
 
     ax.grid()
     ax.legend()
