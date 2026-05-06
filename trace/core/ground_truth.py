@@ -1,8 +1,11 @@
 import numpy as np
 
+from itertools import combinations
 from collections import deque
 from random import choices
+from math import ceil
 
+from trace.core.maths import point_dist
 
 def shortest_distances(sea_map: np.ndarray, start: tuple, action_mapping: dict):
     h, w = sea_map.shape
@@ -67,3 +70,59 @@ def dst_ground_truth(sea_map: np.ndarray, action_mapping: dict, start: tuple = (
 def synthetic_stochastic_points(ground_truth: list, num: int=100, length: int=10):
     episodes = [episode for point in ground_truth for episode in point]
     return [choices(episodes, k=length) for _ in range(num)]
+
+
+def path_combinations(mines: list|np.ndarray, base: list|np.ndarray):
+    mines, base = [list(mine) for mine in mines], list(base)
+    all_paths = []
+
+    for m in range(1, len(mines) + 1):
+        for combo in combinations(mines, m):
+            path = [base, *combo, base]
+            all_paths.append(best_visit_order(path))
+
+    return all_paths
+
+
+def best_visit_order(path: list):
+    # todo make deterministic instead of greedy
+    remaining = path[:-1]
+    best_path = [remaining.pop(0)]
+
+    while remaining:
+        next_node = min(remaining, key=lambda node: point_dist(best_path[-1], node))
+        remaining.remove(next_node)
+        best_path.append(next_node)
+
+    best_path.append(best_path[0])
+    return best_path
+
+
+def trail_strategy(trail_length, speed_acc:float=0.0075, fuel_acc:float=0.025, fuel_idle:float=0.005):
+    best_fuel, best_acc_steps = float('inf'), 0
+
+    for acc_steps in range(1, ceil(trail_length / speed_acc)):
+        vel = acc_steps * speed_acc
+        d_acc = speed_acc * acc_steps * (acc_steps + 1) / 2
+
+        if d_acc >= trail_length: # end reached while accelerating
+            if acc_steps * (fuel_acc + fuel_idle) < best_fuel:
+                return acc_steps
+
+        d_rem = trail_length - d_acc
+        idle_steps = ceil(d_rem / vel)
+        fuel = acc_steps * (fuel_acc + fuel_idle) + idle_steps * fuel_idle
+
+        if fuel < best_fuel:
+            best_fuel, best_acc_steps = fuel, acc_steps
+
+    return best_acc_steps
+
+def main():
+    mines = [[2,0], [2,1], [2,2], [1,2], [0,2]]
+    base = [0,0]
+    for path in path_combinations(mines, base):
+        print(path)
+
+if __name__ == '__main__':
+    main()

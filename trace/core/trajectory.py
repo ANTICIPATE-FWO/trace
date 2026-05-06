@@ -2,7 +2,7 @@ from json import load, dumps
 import numpy as np
 
 from trace.core.auxiliary import homogenize
-from core import discount, all_ints
+from trace.core.maths import discount, all_ints
 
 
 class TrajectoryManager:

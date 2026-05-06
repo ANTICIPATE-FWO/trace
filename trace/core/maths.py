@@ -1,14 +1,15 @@
 import numpy as np
 
 
-def dist(a:np.ndarray, b:np.ndarray):
+def point_dist(a:np.ndarray, b:np.ndarray):
     return np.linalg.norm(np.array(a) - np.array(b))
 
 
 def seg_angle(a, b):
-    a , b = np.array(a), np.array(b)
-    assert a.shape == b.shape, f'Shape assertation: {a.shape}, {b.shape}'
-    return 180 * np.arctan2(*(b - a)) / np.pi
+    a, b = np.array(a), np.array(b)
+    dx, dy = b - a
+    angle = np.arctan2(dy, dx)
+    return (np.degrees(angle) + 360) % 360
 
 
 def seg_proj(point, a, b, eps:float=1e-8):
