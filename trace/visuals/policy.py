@@ -118,6 +118,7 @@ def minecart_trajectories(observations: list|np.ndarray, actions: list|np.ndarra
     grid_h, grid_w = space
     step = 1/ grid_h
     fig, ax = plt.subplots(figsize=(6, 6))
+    #todo remove discretization
 
     # map pixels → grid coords
     ax.imshow(frame, extent=(0, grid_w, grid_h, 0))

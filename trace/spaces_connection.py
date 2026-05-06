@@ -12,13 +12,13 @@ from trace.visuals import sankey, cluster_scatter, grid_trajectories, grid_arrow
 from trace.behavior import BayesianPolicy, distance_matrix
 
 # config
-filepath  = "data/17_dst_ipro.json" # 38_dst_ipro.json
-env_id, method, metric = 'deep-sea-treasure-concave-v0', 'ipro', 'frobenius'
+filepath  = "data/minetrain_ipro.json" # 38_dst_ipro.json
+config, method, metric = 'minetrain', 'ipro', 'frobenius'
 k, cluster_functions= 3, [k_medoids, k_medoids]
 save, show = True, False
 
 # global params
-metadata = safe_load(open("trace/configs/environments.yaml", "r"))[env_id]
+metadata = safe_load(open(f"trace/configs/{config}.yaml", "r"))
 colors = safe_load(open("trace/configs/colors.yaml", "r"))
 plot_directory = f"plots/{metadata['file_prefix']}/{method}/{metric}"
 
@@ -54,7 +54,7 @@ def main():
     figs = [(cluster_scatter(behavior_features, labels[0], colors=colors['warm']), f"behavior_scatter.png"),
             (sankey(*cluster_connections(labels), colors), "sankey.png")]
 
-    traj_frame = grid_trajectories if 'deep-sea-treasure' in env_id else minecart_trajectories
+    traj_frame = grid_trajectories if 'deep-sea-treasure' in metadata['env_id'] else minecart_trajectories
     for c_id in range(k):
         title = f'Behavior Cluster {c_id + 1}: {len(cluster_obs[c_id])} episodes'
         color = colors['warm'][c_id]
