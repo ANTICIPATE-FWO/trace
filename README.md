@@ -6,7 +6,7 @@ University of Antwerp (UA) and Universitair Ziekenhuis Brussel (UZBrussel).
 
 **Dependencies:** Python 3.11<br>
 **Contact:** Emily Palaska (emily.palaska@vub.be)<br>
-**License:** Apache 2.0
+**License:** GNU General Public License v3.0
 
 <p align="center">
   <img src="plots/logos/vub_ai_lab.png" height="60px" />
