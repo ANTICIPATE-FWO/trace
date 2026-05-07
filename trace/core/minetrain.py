@@ -3,17 +3,18 @@ import numpy as np
 from gymnasium import Env, Wrapper, core
 import mo_gymnasium.envs.minecart.minecart as minecart
 
-from trace.core.maths import point_dist, seg_angle, seg_proj, trail_comb, is_connected
+from trace.core.maths import point_dist, seg_angle, seg_proj, trail_comb, is_connected, angle_subtraction, same_point
 
 
 class MinecartTrailWrapper(Wrapper):
     def __init__(self, env:Env[core.ObsType, core.ActType], tolerance:float=0.01):
         super().__init__(env)
         self.tolerance = tolerance
-        minecart.BASE_RADIUS = 0.05
+        minecart.BASE_RADIUS = 0.01
+        self.env.unwrapped.frame_skip = 1
 
         self.on_trail = False
-        self.current_trail = (np.array([0, 0]), np.array([0, 0]))
+        self.current_trail = [np.array([0, 0]), np.array([0, 0])]
 
         self.base = np.array(minecart.HOME_POS)
         self.mines = [np.array(mine.pos) for mine in env.unwrapped.mines]
@@ -38,6 +39,7 @@ class MinecartTrailWrapper(Wrapper):
                 self._lock_orientation()
 
         obs, reward, terminated, truncated, info = self.env.step(action)
+
         new_pos = seg_proj(obs[:2], *self.current_trail)
         obs[:2], self.env.unwrapped.cart.pos = new_pos, new_pos
 
@@ -45,27 +47,29 @@ class MinecartTrailWrapper(Wrapper):
 
     def reset(self, **kwargs):
         obs, info = self.env.reset(**kwargs)
-        self.current_trail = (np.array([0, 0]), np.array([0, 0]))
+        self.current_trail = [np.array([0, 0]), np.array([0, 0])]
         self.on_trail = False
         return obs, info
 
     def _pick_trail(self):
         pos, angle = self.get_pos(), self.get_angle()
-        current_start, current_end = self.current_trail
+
+        if same_point(self.current_trail[0], pos) and angle == seg_angle(*self.current_trail): return
+        elif not (same_point(self.current_trail[1], pos) or same_point(self.current_trail[0], pos)):
+            for mine in self.mines:
+                if same_point(pos, mine): self.current_trail[1] = mine
 
         next_trail, next_angle, best_angle_dif = None, 0, float('inf')
         for trail, trail_angle in zip(self.trails, self.trail_angles):
-            if point_dist(pos, current_start) < point_dist(pos, current_end):
-                self.current_trail, angle = flip(self.current_trail, angle)
-
             if is_connected(self.current_trail, trail): pass
             elif is_connected(self.current_trail, trail[::-1]):
-                trail, trail_angle = flip(trail, trail_angle)
+                trail = trail[::-1]
+                trail_angle = seg_angle(*trail)
+
             else: continue
 
-            angle_diff = (trail_angle - angle) % 360
-            if abs(angle_diff) < best_angle_dif:
-                next_trail, next_angle, best_angle_dif = trail, trail_angle, abs(angle_diff)
+            if (angle_diff := abs(angle_subtraction(angle, trail_angle))) < best_angle_dif:
+                next_trail, next_angle, best_angle_dif = trail, trail_angle, angle_diff
 
         assert next_trail is not None, f'Trail not found for {self.current_trail}'
         self.current_trail, self.current_angle = next_trail, next_angle
@@ -76,7 +80,7 @@ class MinecartTrailWrapper(Wrapper):
     def spin_allowed(self):
         pos = self.get_pos()
 
-        for point in (self.base, *self.current_trail):
+        for point in (self.base, *self.mines):
             if point_dist(pos, point) <= self.tolerance:
                 return True
         return False
@@ -86,8 +90,4 @@ class MinecartTrailWrapper(Wrapper):
 
     def get_pos(self):
         return self.env.unwrapped.cart.pos
-
-
-def flip(trail: tuple, angle: float):
-    return trail[::-1], (angle + 180) % 360
 

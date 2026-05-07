@@ -1,77 +1,63 @@
 import numpy as np
 np.set_printoptions(suppress=True, precision=2)
 
-from trace.core import initialize_setting, path_combinations, seg_angle, point_dist, trail_strategy
+from trace.core import initialize_setting, path_combinations, seg_angle, point_dist, best_acc_steps, same_point, angle_subtraction
 from trace.visuals import minecart_trajectories
 
 import mo_gymnasium.envs.minecart.minecart as minecart
 
-def path_playout(env, path, eps:float=0.1):
-    #todo cleanup
-    observations, actions, rewards = [], [], []
-    terminated, truncated = False, False
-    obs, _ = env.reset()
-    observations.append(obs)
+def perform_action(env, action, episode_dict):
+    episode_dict['actions'].append(action)
+    observations, reward, terminated, truncated, _ = env.step(action)
+    if terminated or truncated: return env, True
 
-    for e in range(len(path) - 1):
-        start, end = path[e], path[e + 1]
+    episode_dict['observations'].append(observations)
+    episode_dict['rewards'].append(reward)
+    return env, False
+
+
+def path_playout(env, path):
+    obs, _ = env.reset()
+    episode_dict, terminated = {'observations': [obs], 'actions': [], 'rewards': []}, False
+
+    for start, end in zip(path, path[1:]):
         trail_angle = seg_angle(start, end)
         rot_action = minecart.ACT_LEFT if env.get_angle() - trail_angle > 0 else minecart.ACT_RIGHT
-        angle_diff = (env.get_angle() - trail_angle) % 360
-        while not abs(angle_diff) < 30:
-            obs, reward, terminated, truncated, _ = env.step(rot_action)
-            observations.append(obs)
-            actions.append(rot_action)
-            rewards.append(reward)
-            angle_diff = (env.get_angle() - trail_angle) % 360
+        while not -10 < abs(angle_subtraction(env.get_angle(), trail_angle)) < 10:
+            env, terminated = perform_action(env, rot_action, episode_dict)
+            if terminated: break
+        if terminated: break
 
-            if terminated or truncated: break
-        if terminated or truncated: break
-        acc_steps = trail_strategy(point_dist(start, end))
+        for _ in range(best_acc_steps(point_dist(start, end))):
+            env, terminated = perform_action(env, minecart.ACT_ACCEL, episode_dict)
+            if terminated or same_point(env.get_pos(), end): break
+        if terminated: break
 
-        for i in range(acc_steps):
-            obs, reward, terminated, truncated, _ = env.step(minecart.ACT_ACCEL)
-            observations.append(obs)
-            actions.append(minecart.ACT_ACCEL)
-            rewards.append(reward)
+        while not same_point(env.get_pos(), end):
+            env, terminated = perform_action(env, minecart.ACT_NONE, episode_dict)
+            if terminated: break
+        if terminated: break
+        env, terminated = perform_action(env, minecart.ACT_BRAKE, episode_dict)
+        if terminated: break
+        env, terminated = perform_action(env, minecart.ACT_MINE, episode_dict)
+        if terminated: break
 
-            if terminated or truncated: break
-        if terminated or truncated: break
-
-        while not env.spin_allowed():
-            obs, reward, terminated, truncated, _ = env.step(minecart.ACT_NONE)
-            observations.append(obs)
-            actions.append(minecart.ACT_NONE)
-            rewards.append(reward)
-
-            if terminated or truncated: break
-        if terminated or truncated: break
-
-        obs, reward, terminated, truncated, _ = env.step(minecart.ACT_BRAKE)
-        observations.append(obs)
-        actions.append(minecart.ACT_BRAKE)
-        rewards.append(reward)
-        if terminated or truncated: break
-
-        obs, reward, terminated, truncated, _ = env.step(minecart.ACT_MINE)
-        observations.append(obs)
-        actions.append(minecart.ACT_MINE)
-        rewards.append(reward)
-        if terminated or truncated: break
-
-    return observations, actions, rewards
-
+    print('final length: ', len(episode_dict['observations']))
+    return episode_dict
 
 
 def main():
     env_id = "minecart-v0"
     env, eval_env = initialize_setting(env_id, minetrain=True)
-
     paths = path_combinations(eval_env.mines, eval_env.base)
-    example = paths[30]
-    print('path: ', example)
-    observations, actions, rewards = path_playout(eval_env, example)
-    for o in observations: print(o)
+
+    example = paths[27]
+    print('path: ', example, '\n')
+
+    episode_dict = path_playout(eval_env, example)
+    observations, actions = episode_dict['observations'], episode_dict['actions']
+    for a in actions:
+        if a == 0 : print(a)
     fig = minecart_trajectories([observations], [actions], mines=eval_env.mines, alpha=0.8, color='brown')
     fig.show()
 

@@ -98,8 +98,8 @@ def best_visit_order(path: list):
     return best_path
 
 
-def trail_strategy(trail_length, speed_acc:float=0.0075, fuel_acc:float=0.025, fuel_idle:float=0.005):
-    best_fuel, best_acc_steps = float('inf'), 0
+def best_acc_steps(trail_length:float, speed_acc:float=0.0075, fuel_acc:float=0.025, fuel_idle:float=0.005):
+    best_fuel, best_steps = float('inf'), 0
 
     for acc_steps in range(1, ceil(trail_length / speed_acc)):
         vel = acc_steps * speed_acc
@@ -114,15 +114,12 @@ def trail_strategy(trail_length, speed_acc:float=0.0075, fuel_acc:float=0.025, f
         fuel = acc_steps * (fuel_acc + fuel_idle) + idle_steps * fuel_idle
 
         if fuel < best_fuel:
-            best_fuel, best_acc_steps = fuel, acc_steps
+            best_fuel, best_steps = fuel, acc_steps
 
-    return best_acc_steps
+    return best_steps
 
 def main():
-    mines = [[2,0], [2,1], [2,2], [1,2], [0,2]]
-    base = [0,0]
-    for path in path_combinations(mines, base):
-        print(path)
+    print(best_acc_steps(0.339999))
 
 if __name__ == '__main__':
     main()

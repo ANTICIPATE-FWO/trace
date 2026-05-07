@@ -123,6 +123,11 @@ def minecart_trajectories(observations: list|np.ndarray, actions: list|np.ndarra
     # map pixels → grid coords
     ax.imshow(frame, extent=(0, grid_w, grid_h, 0))
 
+    if mines is not None:
+        for m in mines:
+            y, x = discretize(m, step)
+            ax.scatter(x * grid_w, y * grid_h, marker='o', color='yellow', s=30)
+
     for obs, act in zip(observations, actions):
         if len(obs) < 2: continue
 
@@ -139,10 +144,7 @@ def minecart_trajectories(observations: list|np.ndarray, actions: list|np.ndarra
                 y, x = discretize(p[:2], step)
                 ax.scatter(x * grid_w, y * grid_h, marker='x', color=mine_color, s=30)
 
-    if mines is not None:
-        for m in mines:
-            y, x = discretize(m, step)
-            ax.scatter(x * grid_w, y * grid_h, marker='o', color='yellow', s=30)
+
 
     ax.set_aspect('equal')
     ax.axis("off")
