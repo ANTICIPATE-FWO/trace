@@ -1,7 +1,7 @@
 from json import load, dumps
 import numpy as np
 
-from trace.core.auxiliary import homogenize
+from core import pareto_filter
 from trace.core.maths import discount, all_ints
 
 
@@ -13,18 +13,20 @@ class TrajectoryManager:
         self.gamma = metadata['gamma']
 
         self.trajectories = []
-        self.point_num, self.episode_num = 0, 0
-    
 
-    def load(self, source, filtering:bool=False):
+    def load(self, source, filtering:bool=False, flat:bool=False):
         if isinstance(source, str): self.trajectories = load(open(source, 'rb'))
         elif isinstance(source, list): self.trajectories = source
         else: raise ValueError(f'Unknown source type: {type(source)}')
 
-        if filtering: self._filter_duplicates()
+        if flat:
+            self.trajectories = [[traj] for point in self.trajectories for traj in point]
 
-        self.point_num = len(self.trajectories)
-        self.episode_num = sum(len(point) for point in self.trajectories)
+        if filtering:
+            #self.trajectories = [filter_duplicates(traj) for traj in self.trajectories]
+            self.trajectories = [[self.trajectories[i][0]] for i in pareto_filter(self.accrue())]
+
+
         self._verify_data()
         return self
 
@@ -40,26 +42,12 @@ class TrajectoryManager:
     def __len__(self):
         return len(self.trajectories)
 
-    def _filter_duplicates(self):
-        # todo auxiliary and out of class
-        filtered_trajectories = []
-
-        for point in self.trajectories:
-            filtered_point, seen_episodes = [], set()
-            for episode in point:
-                if (episode_str := dumps(episode, sort_keys=True)) not in seen_episodes:
-                    seen_episodes.add(episode_str)
-                    filtered_point.append(episode)
-            filtered_trajectories.append(filtered_point)
-
-        self.trajectories = filtered_trajectories
-
     def accrue(self, key: str='rewards', gamma: float|None=None):
         if not gamma: gamma = self.gamma
         return np.array([
             np.mean([
-                discount(episode[key], gamma) for episode in point
-            ], axis=0)
+                discount(trajectory[key], gamma) for trajectory in point
+            ],axis=0)
             for point in self.trajectories
         ])
 
@@ -83,21 +71,43 @@ class TrajectoryManager:
         if flatten: return np.stack([d for ep in dists for d in ep])
         return dists
 
-    def policy_data(self, pad: int|None=None, flatten: bool=False):
+    def conditioning_features(self, pad: int|None=None, flatten: bool=False, gamma: float|None=None):
         obs = self.sequence(key='observations', pad=pad, flatten=flatten)
         acs = self.sequence(key='actions', pad=pad, flatten=flatten)
-        rew = self.accrue(key='rewards')
+        rew = self.accrue(key='rewards', gamma=gamma)
         return obs, acs, rew
 
     def save(self, filepath: str):
         with open(filepath, 'w') as f: f.write(dumps(self.trajectories, indent=2))
 
-def traj_dict(obs, acs, rew):
-    return [
-        [{
-        'observations': obs_episode,
-        'actions': acs_episode,
-        'rewards': rew_episode,
-        } for obs_episode, acs_episode, rew_episode in zip(obs_point, acs_point, rew_point)]
-        for obs_point, acs_point, rew_point in zip(obs, acs, rew)
-    ]
+
+def homogenize(array:list, pad:int=-1):
+    def homogenous_shape(x):
+        if not isinstance(x, list): return ()
+        sub_array = [homogenous_shape(i) for i in x]
+        return (len(x),) + tuple(
+            max((s[d] if d < len(s) else 0) for s in sub_array)
+            for d in range(max(map(len, sub_array), default=0))
+        )
+
+    def fill(x, shp:tuple):
+        if not shp: return x
+        x = x if isinstance(x, list) else []
+        return [
+            fill(x[i] if i < len(x) else pad, shp[1:])
+            for i in range(shp[0])
+        ]
+
+    return fill(array, homogenous_shape(array))
+
+
+def filter_duplicates(array:list, sort:bool=True):
+    filtered, seen = [], set()
+    for element in array:
+        if sort:
+            if isinstance(element, dict): element = dict(sorted(element.items()))
+            else: element = sorted(element)
+        if (element_str := str(element)) not in seen:
+            seen.add(element_str)
+            filtered.append(element)
+    return filtered
