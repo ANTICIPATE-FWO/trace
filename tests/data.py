@@ -4,7 +4,7 @@ os.chdir('../')
 import numpy as np
 np.set_printoptions(suppress=True)
 
-from trace.core import TrajectoryManager, aggregate_policies
+from trace.core import TrajectoryManager
 
 synthetic_dst_data = [
     # first pareto point
