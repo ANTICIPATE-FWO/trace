@@ -4,9 +4,9 @@ import numpy as np
 from trace.core import all_ints, discretize
 
 
-class BayesianPolicy:
+class EmpiricalDistribution:
     def __init__(self, metadata: dict, alpha: float=1.0, step: float=0.1):
-        self.alpha = alpha
+        self.metadata, self.alpha = metadata, alpha
         self.env_id, self.actions = metadata['env_id'], metadata['actions']
 
         highs, lows = metadata['observations_high'], metadata['observations_low']

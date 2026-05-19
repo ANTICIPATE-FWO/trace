@@ -1,31 +1,34 @@
 import numpy as np
 
-def distance_matrix(policies, metric='agreement', smoothing=False, norm=True, lam: float = 5.0):
+from trace.behavior.conditioning import EmpiricalDistribution
+
+def distance_matrix(models: list[EmpiricalDistribution], metric :str='agreement', smoothing: bool=False, norm: bool=True, lam: float=0.5):
     assert metric in ('frobenius', 'wasserstein' ,'agreement')
 
-    n = len(policies)
+    n = len(models)
     dist_mat = np.ones((n, n))
 
     for i in range(n):
-        vi = set(policies[i].get_visited())
+        if i % 100 == 0: print(f'{i}/{n}')
+        vi = set(models[i].get_visited())
 
         for j in range(i, n):
-            vj = set(policies[j].get_visited())
+            vj = set(models[j].get_visited())
             if not (overlap := vi & vj): continue
 
             d = 0.0
             if metric == 'frobenius':
-                mat_i = [policies[i].action_probs(s) for s in vi|vj]
-                mat_j = [policies[j].action_probs(s) for s in vi|vj]
+                mat_i = [models[i].action_probs(s) for s in vi|vj]
+                mat_j = [models[j].action_probs(s) for s in vi|vj]
                 d = frobenius(mat_i, mat_j)
             elif metric == 'wasserstein':
-                cost = l2_cost(policies[i].get_actions(), policies[j].get_actions())
+                cost = l2_cost(models[i].get_actions(), models[j].get_actions())
                 for s in overlap:
-                    d += wasserstein(policies[i].action_probs(s), policies[j].action_probs(s), cost)
+                    d += wasserstein(models[i].action_probs(s), models[j].action_probs(s), cost)
                 d /= len(overlap)
             elif metric == 'agreement':
                 for s in overlap:
-                    d += 1 if policies[i].act(s) != policies[j].act(s) else 0
+                    d += 1 if models[i].act(s) != models[j].act(s) else 0
                 d /= len(overlap)
 
             dist_mat[i, j] = dist_mat[j, i] = d
