@@ -14,7 +14,7 @@ import wandb
 from gymnasium import spaces
 from mo_gymnasium.wrappers.vector import MOSyncVectorEnv
 
-from collection.morl_baselines import (
+from trace.policies.morl_baselines.common.evaluation import (
     eval_mo_reward_conditioned,
     policy_evaluation_mo,
 )

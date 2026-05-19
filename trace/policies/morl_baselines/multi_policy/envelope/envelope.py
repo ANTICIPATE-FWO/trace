@@ -12,22 +12,22 @@ import torch.nn.functional as F
 import torch.optim as optim
 import wandb
 
-from collection.morl_baselines.common.buffer import ReplayBuffer
-from collection.morl_baselines import (
+from trace.policies.morl_baselines.common.buffer import ReplayBuffer
+from trace.policies.morl_baselines import (
     log_all_multi_policy_metrics,
     log_episode_info,
 )
-from collection.morl_baselines import MOAgent, MOPolicy
-from collection.morl_baselines import (
+from trace.policies.morl_baselines import MOAgent, MOPolicy
+from trace.policies.morl_baselines import (
     NatureCNN,
     get_grad_norm,
     layer_init,
     mlp,
     polyak_update,
 )
-from collection.morl_baselines.common.prioritized_buffer import PrioritizedReplayBuffer
-from collection.morl_baselines import linearly_decaying_value
-from collection.morl_baselines.common.weights import equally_spaced_weights, random_weights
+from trace.policies.morl_baselines.common.prioritized_buffer import PrioritizedReplayBuffer
+from trace.policies.morl_baselines import linearly_decaying_value
+from trace.policies.morl_baselines.common.weights import equally_spaced_weights, random_weights
 
 
 class QNet(nn.Module):

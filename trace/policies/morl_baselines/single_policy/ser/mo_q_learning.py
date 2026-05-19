@@ -8,11 +8,11 @@ import gymnasium as gym
 import numpy as np
 import wandb
 
-from collection.morl_baselines import log_episode_info
-from collection.morl_baselines.common.model_based.tabular_model import TabularModel
-from collection.morl_baselines import MOAgent, MOPolicy
-from collection.morl_baselines.common.scalarization import weighted_sum
-from collection.morl_baselines import linearly_decaying_value
+from trace.policies.morl_baselines import log_episode_info
+from trace.policies.morl_baselines.common.model_based.tabular_model import TabularModel
+from trace.policies.morl_baselines import MOAgent, MOPolicy
+from trace.policies.morl_baselines.common.scalarization import weighted_sum
+from trace.policies.morl_baselines import linearly_decaying_value
 
 
 class MOQLearning(MOPolicy, MOAgent):

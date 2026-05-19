@@ -7,11 +7,11 @@ import gymnasium as gym
 import numpy as np
 import wandb
 
-from collection.morl_baselines import log_all_multi_policy_metrics
-from collection.morl_baselines import MOAgent
-from collection.morl_baselines import get_non_dominated
-from collection.morl_baselines.common.performance_indicators import hypervolume
-from collection.morl_baselines import linearly_decaying_value
+from trace.policies.morl_baselines import log_all_multi_policy_metrics
+from trace.policies.morl_baselines import MOAgent
+from trace.policies.morl_baselines import get_non_dominated
+from trace.policies.morl_baselines.common.performance_indicators import hypervolume
+from trace.policies.morl_baselines import linearly_decaying_value
 
 
 class PQL(MOAgent):

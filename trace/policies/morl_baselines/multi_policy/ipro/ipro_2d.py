@@ -8,13 +8,13 @@ import numpy as np
 import torch
 from sortedcontainers import SortedKeyList
 
-from collection.morl_baselines import (
+from trace.policies.morl_baselines import (
     filter_pareto_dominated,
     pareto_dominates,
     strict_pareto_dominates,
 )
-from collection.morl_baselines.multi_policy.ipro.box import Box
-from collection.morl_baselines import (
+from trace.policies.morl_baselines.multi_policy.ipro.box import Box
+from trace.policies.morl_baselines import (
     OuterLoop,
     Subproblem,
     Subsolution,

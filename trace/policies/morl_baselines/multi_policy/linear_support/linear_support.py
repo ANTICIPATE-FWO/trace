@@ -9,10 +9,10 @@ import numpy as np
 from cvxpy import SolverError
 from gymnasium.core import Env
 
-from collection.morl_baselines import policy_evaluation_mo
-from collection.morl_baselines import MOPolicy
-from collection.morl_baselines.common.performance_indicators import hypervolume
-from collection.morl_baselines.common.weights import extrema_weights
+from trace.policies.morl_baselines import policy_evaluation_mo
+from trace.policies.morl_baselines import MOPolicy
+from trace.policies.morl_baselines.common.performance_indicators import hypervolume
+from trace.policies.morl_baselines.common.weights import extrema_weights
 
 
 try:

@@ -6,14 +6,14 @@ import gymnasium as gym
 import numpy as np
 import torch
 
-from collection.morl_baselines import (
+from trace.policies.morl_baselines.common.pareto import (
     batched_strict_pareto_dominates,
     filter_pareto_dominated,
     pareto_dominates,
     strict_pareto_dominates,
 )
-from collection.morl_baselines.multi_policy.ipro.box import Box
-from collection.morl_baselines import (
+from trace.policies.morl_baselines.multi_policy.ipro.box import Box
+from trace.policies.morl_baselines.multi_policy.ipro.outer_loop import (
     OuterLoop,
     Subproblem,
     Subsolution,

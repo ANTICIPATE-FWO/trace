@@ -15,16 +15,16 @@ import torch as th
 from mo_gymnasium.wrappers import MONormalizeReward
 from torch import optim
 
-from collection.morl_baselines import log_all_multi_policy_metrics
-from collection.morl_baselines import MOAgent, MOPolicy
-from collection.morl_baselines import polyak_update
-from collection.morl_baselines import ParetoArchive
-from collection.morl_baselines.common.scalarization import tchebicheff, weighted_sum
-from collection.morl_baselines import nearest_neighbors
-from collection.morl_baselines.common.weights import equally_spaced_weights, random_weights
-from collection.morl_baselines.single_policy.esr.eupg import EUPG
-from collection.morl_baselines.single_policy import MOSAC
-from collection.morl_baselines.single_policy.ser.mosac_discrete_action import MOSACDiscrete
+from trace.policies.morl_baselines import log_all_multi_policy_metrics
+from trace.policies.morl_baselines import MOAgent, MOPolicy
+from trace.policies.morl_baselines import polyak_update
+from trace.policies.morl_baselines import ParetoArchive
+from trace.policies.morl_baselines.common.scalarization import tchebicheff, weighted_sum
+from trace.policies.morl_baselines import nearest_neighbors
+from trace.policies.morl_baselines.common.weights import equally_spaced_weights, random_weights
+from trace.policies.morl_baselines.single_policy.esr.eupg import EUPG
+from trace.policies.morl_baselines.single_policy import MOSAC
+from trace.policies.morl_baselines.single_policy.ser.mosac_discrete_action import MOSACDiscrete
 
 
 POLICIES = {

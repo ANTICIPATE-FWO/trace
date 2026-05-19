@@ -14,7 +14,7 @@ import wandb
 from numpy import ndarray, dtype, floating
 from torch.distributions.categorical import Categorical
 
-from collection.morl_baselines import MOPolicy
+from trace.policies.morl_baselines.common.morl_algorithm import MOPolicy
 
 
 def layer_init(layer, std=np.sqrt(2), bias_const=0.0):

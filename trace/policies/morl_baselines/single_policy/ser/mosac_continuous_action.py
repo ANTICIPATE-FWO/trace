@@ -18,10 +18,10 @@ import torch.nn.functional as F
 import torch.optim as optim
 import wandb
 
-from collection.morl_baselines.common.buffer import ReplayBuffer
-from collection.morl_baselines import log_episode_info
-from collection.morl_baselines import MOPolicy
-from collection.morl_baselines import layer_init, mlp, polyak_update
+from trace.policies.morl_baselines.common.buffer import ReplayBuffer
+from trace.policies.morl_baselines import log_episode_info
+from trace.policies.morl_baselines import MOPolicy
+from trace.policies.morl_baselines import layer_init, mlp, polyak_update
 
 
 # ALGO LOGIC: initialize agent here:

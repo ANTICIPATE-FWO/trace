@@ -13,18 +13,18 @@ import torch.nn.functional as F
 import torch.optim as optim
 import wandb
 
-from collection.morl_baselines.common.buffer import ReplayBuffer
-from collection.morl_baselines import (
+from trace.policies.morl_baselines.common.buffer import ReplayBuffer
+from trace.policies.morl_baselines import (
     log_all_multi_policy_metrics,
     log_episode_info,
     policy_evaluation_mo,
 )
-from collection.morl_baselines.common.model_based.probabilistic_ensemble import (
+from trace.policies.morl_baselines.common.model_based.probabilistic_ensemble import (
     ProbabilisticEnsemble,
 )
-from collection.morl_baselines.common import ModelEnv, visualize_eval
-from collection.morl_baselines import MOAgent, MOPolicy
-from collection.morl_baselines import (
+from trace.policies.morl_baselines.common import ModelEnv, visualize_eval
+from trace.policies.morl_baselines import MOAgent, MOPolicy
+from trace.policies.morl_baselines import (
     NatureCNN,
     get_grad_norm,
     huber,
@@ -32,10 +32,10 @@ from collection.morl_baselines import (
     mlp,
     polyak_update,
 )
-from collection.morl_baselines.common.prioritized_buffer import PrioritizedReplayBuffer
-from collection.morl_baselines import linearly_decaying_value, unique_tol
-from collection.morl_baselines.common.weights import equally_spaced_weights
-from collection.morl_baselines.multi_policy.linear_support import LinearSupport
+from trace.policies.morl_baselines.common.prioritized_buffer import PrioritizedReplayBuffer
+from trace.policies.morl_baselines import linearly_decaying_value, unique_tol
+from trace.policies.morl_baselines.common.weights import equally_spaced_weights
+from trace.policies.morl_baselines.multi_policy.linear_support import LinearSupport
 
 
 class QNet(nn.Module):

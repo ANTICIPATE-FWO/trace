@@ -14,14 +14,14 @@ from numpy import ndarray, dtype, floating
 from pymoo.config import Config
 from pymoo.indicators.hv import Hypervolume
 
-from collection.morl_baselines import MOAgent
-from collection.morl_baselines import (
+from trace.policies.morl_baselines.common.morl_algorithm import MOAgent
+from trace.policies.morl_baselines.common.pareto import (
     batched_pareto_dominates,
     batched_strict_pareto_dominates,
     filter_pareto_dominated,
     strict_pareto_dominates,
 )
-from collection.morl_baselines.single_policy.ser.nl_mo_ppo import NLMOPPO, Agent
+from trace.policies.morl_baselines.single_policy.ser.nl_mo_ppo import NLMOPPO
 
 Config.warnings["not_compiled"] = False
 

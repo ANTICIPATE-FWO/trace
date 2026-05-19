@@ -8,15 +8,15 @@ from typing_extensions import override
 import gymnasium as gym
 import numpy as np
 
-from collection.morl_baselines import (
+from trace.policies.morl_baselines import (
     log_all_multi_policy_metrics,
     policy_evaluation_mo,
 )
-from collection.morl_baselines import MOAgent
-from collection.morl_baselines.common.scalarization import weighted_sum
-from collection.morl_baselines.common.weights import equally_spaced_weights, random_weights
-from collection.morl_baselines.multi_policy.linear_support import LinearSupport
-from collection.morl_baselines.single_policy import MOQLearning
+from trace.policies.morl_baselines import MOAgent
+from trace.policies.morl_baselines.common.scalarization import weighted_sum
+from trace.policies.morl_baselines.common.weights import equally_spaced_weights, random_weights
+from trace.policies.morl_baselines.multi_policy.linear_support import LinearSupport
+from trace.policies.morl_baselines.single_policy import MOQLearning
 
 
 class MPMOQLearning(MOAgent):

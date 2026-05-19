@@ -1,8 +1,7 @@
 from json import load, dumps
 import numpy as np
 
-from core import pareto_filter
-from trace.core.maths import discount, all_ints
+from trace.core.maths import discount, all_ints, pareto_filter
 
 
 class TrajectoryManager:

@@ -5,7 +5,8 @@ from math import ceil
 import numpy as np
 
 from core import same_point
-from trace.core import point_dist as point_dist, MinecartTrailWrapper
+from trace.core import point_dist as point_dist
+from trace.policies.minetrain import MinecartTrailWrapper
 
 
 def reachable_steps(sea_map: np.ndarray, action_mapping:dict, start:tuple=(0,0)):

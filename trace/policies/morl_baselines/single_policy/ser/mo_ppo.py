@@ -14,9 +14,9 @@ from mo_gymnasium.wrappers import MORecordEpisodeStatistics
 from torch import nn, optim
 from torch.distributions import Normal
 
-from collection.morl_baselines import log_episode_info
-from collection.morl_baselines import MOPolicy
-from collection.morl_baselines import layer_init, mlp
+from trace.policies.morl_baselines import log_episode_info
+from trace.policies.morl_baselines import MOPolicy
+from trace.policies.morl_baselines import layer_init, mlp
 
 
 class PPOReplayBuffer:

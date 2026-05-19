@@ -13,10 +13,10 @@ import torch.optim as optim
 import wandb
 from torch.distributions import Categorical
 
-from collection.morl_baselines.common.accrued_reward_buffer import AccruedRewardReplayBuffer
-from collection.morl_baselines import log_episode_info
-from collection.morl_baselines import MOAgent, MOPolicy
-from collection.morl_baselines import layer_init, mlp
+from trace.policies.morl_baselines.common.accrued_reward_buffer import AccruedRewardReplayBuffer
+from trace.policies.morl_baselines import log_episode_info
+from trace.policies.morl_baselines import MOAgent, MOPolicy
+from trace.policies.morl_baselines import layer_init, mlp
 
 
 class PolicyNet(nn.Module):

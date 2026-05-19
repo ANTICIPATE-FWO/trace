@@ -17,11 +17,11 @@ import torch as th
 import wandb
 from scipy.optimize import least_squares
 
-from collection.morl_baselines import log_all_multi_policy_metrics
-from collection.morl_baselines import MOAgent
-from collection.morl_baselines import ParetoArchive
-from collection.morl_baselines.common.performance_indicators import hypervolume, sparsity
-from collection.morl_baselines.single_policy import MOPPO, MOPPONet, make_env
+from trace.policies.morl_baselines import log_all_multi_policy_metrics
+from trace.policies.morl_baselines import MOAgent
+from trace.policies.morl_baselines import ParetoArchive
+from trace.policies.morl_baselines.common.performance_indicators import hypervolume, sparsity
+from trace.policies.morl_baselines.single_policy import MOPPO, MOPPONet, make_env
 
 
 class PerformancePredictor:

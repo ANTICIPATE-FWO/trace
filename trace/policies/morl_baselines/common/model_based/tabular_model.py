@@ -4,7 +4,7 @@ import random
 
 import numpy as np
 
-from collection.morl_baselines.common.prioritized_buffer import SumTree
+from trace.policies.morl_baselines.common.prioritized_buffer import SumTree
 
 
 class TabularModel:

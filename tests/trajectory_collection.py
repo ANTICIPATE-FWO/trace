@@ -4,6 +4,8 @@ warnings.filterwarnings("ignore", category=UserWarning)
 import os
 os.chdir('..')
 
+from yaml import safe_load
+
 from trace.core import TrajectoryManager
 from trace.policies import initialize_setting, dst_gt, minetrain_gt, IPRO
 
@@ -39,16 +41,19 @@ def ipro_samples(metadata:dict, iter_steps:int, save:bool=True, verbose:bool=Tru
         num_steps=metadata['num_steps'],
         log=False,
         gamma=metadata['gamma'])
+    if verbose: print('Initialized algorithm')
 
     pareto_set = ipro.train(
         eval_env=eval_env,
         ref_point=metadata['ref_point'],
         deterministic=metadata['eval_episodes'] == 1,
         eval_episodes=metadata['eval_episodes'],
-        verbose=verbose)
+    )
 
     manager = TrajectoryManager(metadata).load([traj for _, _, traj in pareto_set])
     if save: manager.save(f"data/{metadata['file_prefix']}_ipro.json")
     return manager
 
 
+if __name__ == '__main__':
+    ipro_samples(safe_load(open('trace/configs/dst-conc.yaml')), iter_steps=500_000)

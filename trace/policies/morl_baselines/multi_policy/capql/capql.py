@@ -14,14 +14,14 @@ import torch.optim as optim
 import wandb
 from torch.distributions import Normal
 
-from collection.morl_baselines import (
+from trace.policies.morl_baselines import (
     log_all_multi_policy_metrics,
     log_episode_info,
     policy_evaluation_mo,
 )
-from collection.morl_baselines import MOAgent, MOPolicy
-from collection.morl_baselines import layer_init, mlp, polyak_update
-from collection.morl_baselines.common.weights import equally_spaced_weights
+from trace.policies.morl_baselines import MOAgent, MOPolicy
+from trace.policies.morl_baselines import layer_init, mlp, polyak_update
+from trace.policies.morl_baselines.common.weights import equally_spaced_weights
 
 
 LOG_SIG_MAX = 2

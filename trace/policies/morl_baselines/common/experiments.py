@@ -2,20 +2,20 @@
 
 import argparse
 
-from collection.morl_baselines import CAPQL
-from collection.morl_baselines import Envelope
-from collection.morl_baselines.multi_policy.gpi_pd.gpi_pd import GPILS, GPIPD
-from collection.morl_baselines.multi_policy.gpi_pd.gpi_pd_continuous_action import (
+from trace.policies.morl_baselines import CAPQL
+from trace.policies.morl_baselines import Envelope
+from trace.policies.morl_baselines.multi_policy.gpi_pd.gpi_pd import GPILS, GPIPD
+from trace.policies.morl_baselines.multi_policy.gpi_pd.gpi_pd_continuous_action import (
     GPILSContinuousAction,
     GPIPDContinuousAction,
 )
-from collection.morl_baselines.multi_policy.morld.morld import MORLD
-from collection.morl_baselines.multi_policy.multi_policy_moqlearning.mp_mo_q_learning import (
+from trace.policies.morl_baselines.multi_policy.morld.morld import MORLD
+from trace.policies.morl_baselines.multi_policy.multi_policy_moqlearning.mp_mo_q_learning import (
     MPMOQLearning,
 )
-from collection.morl_baselines import PQL
-from collection.morl_baselines.multi_policy.pcn.pcn import PCN
-from collection.morl_baselines.multi_policy.pgmorl.pgmorl import PGMORL
+from trace.policies.morl_baselines import PQL
+from trace.policies.morl_baselines.multi_policy.pcn.pcn import PCN
+from trace.policies.morl_baselines.multi_policy.pgmorl.pgmorl import PGMORL
 
 
 ALGOS = {
