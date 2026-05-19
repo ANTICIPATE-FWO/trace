@@ -13,7 +13,7 @@ reward_dim: (3,)
 observations_features: ['x', 'y', 'speed', 'sin', 'cos', 'ore1load', 'ore2load']
 observations_high: [1., 1., 1., 1., 1., 1., 1.]
 observations_low: [-1., -1., -1., -1., -1., -1., -1.]
-gamma: 0.98
+gamma: 1.
 num_steps: 1000
 tolerance: 1e-15
 eval_episodes: 100
