@@ -1,56 +1,51 @@
 import numpy as np
-from matplotlib import pyplot as plt
-
-from trace.core import discretize
-from trace.visuals.utils import env_frame, tsne_transform, tree_to_graph
-
+import matplotlib.pyplot as plt
+import seaborn as sns
 import networkx as nx
-from networkx.drawing.nx_pydot import graphviz_layout
+
+from trace.core import discretize, TrajectoryManager
+from trace.visuals.utils import env_frame, tsne_transform, tree_to_graph, tree_features
+
 from sklearn.tree import DecisionTreeClassifier
 
 
 
-def temporal_alignment(sequences: list|np.ndarray, actions : dict, time_range: tuple|None=None, title: str|None=None):
-    unique_values = sorted(set(val for seq in sequences for val in seq))
-    value_to_int = {val: i for i, val in enumerate(unique_values)}
-
+def temporal_alignment(action_seq:list|np.ndarray, action_names:dict, time_range: tuple|None=None, title: str|None=None):
     if time_range:
         start, end = time_range
         max_len = end - start
     else:
-        max_len = max(len(seq) for seq in sequences)
+        max_len = max(len(seq) for seq in action_seq)
         start, end = 0, max_len - 1
 
 
-    matrix = np.full((len(sequences), max_len), fill_value=-1)
+    matrix = np.full((len(action_seq), max_len), fill_value=-1)
 
-    for i, seq in enumerate(sequences):
+    for i, seq in enumerate(action_seq):
         for j in range(start, min(end, len(seq))):
-            matrix[i, j - start] = value_to_int[seq[j]]
+            matrix[i, j - start] = seq[j]
 
 
-    # Colormap with black for padding (-1)
-    cmap = plt.cm.get_cmap('viridis', len(unique_values))
+    cmap = plt.cm.get_cmap('viridis', len(action_names))
     cmap.set_bad(color='black')
 
     masked_matrix = np.ma.masked_where(matrix == -1, matrix)
 
     fig, ax = plt.subplots(figsize=(12, 4))
-    im = ax.imshow(masked_matrix, aspect='auto', cmap=cmap)
+    im = ax.imshow(masked_matrix, aspect='auto', cmap=cmap, interpolation='nearest')
 
-    tick_positions = list(range(len(unique_values)))
-    tick_labels = [actions[value] for value in unique_values]
+    tick_positions = list(action_names.keys())
+    tick_labels = list(action_names.values())
 
-    cbar = fig.colorbar(im, ax=ax, ticks=tick_positions)
-    cbar.ax.set_yticklabels(tick_labels)
+    fig.colorbar(im, ax=ax, ticks=tick_positions).ax.set_yticklabels(tick_labels)
 
-    if len(sequences) < 10:
+    if len(action_seq) < 10:
         for i in range(matrix.shape[0]):
             for j in range(matrix.shape[1]):
                 if matrix[i, j] != -1:
                     original_j = j + start if time_range is not None else j
                     ax.text(
-                        j, i, sequences[i][original_j],
+                        j, i, action_seq[i][original_j],
                         ha='center', va='center', color='black'
                     )
 
@@ -62,104 +57,45 @@ def temporal_alignment(sequences: list|np.ndarray, actions : dict, time_range: t
     return fig
 
 
-def grid_arrows(policy, action_mapping: dict, title: str = None, color: str = "black"):
-    assert policy.env_id == 'deep-sea-treasure-v0', f'Cannot visualize grid for environment {policy.env_id}'
-    grid_x, grid_y = policy.obs_space
-
-    u = np.full((len(grid_y), len(grid_x)), np.nan, dtype=float)
-    v = np.full((len(grid_y), len(grid_x)), np.nan, dtype=float)
-
-    x0, y0 = grid_x[0], grid_y[0]
-    for state in policy.counts.keys():
-        px = policy.action_probs(state)
-        if px.max() - px.min() < 1e-6: continue
-
-        y, x = state
-        iy, ix = int(y - y0), int(x - x0)
-        u[iy, ix], v[iy, ix] = action_mapping[np.argmax(px)]
+def grid_trajectories(manager:TrajectoryManager, frame_dir:str|None=None, step_size:float|int=1,
+                      title: str|None=None, alpha: float|int=0.1, color: str='red'):
+    frame = plt.imread('plots/sketches/dst_frame_abstr.png') if frame_dir else env_frame(manager.metadata['env_id'])
+    h, w = manager.metadata['observations_high'][:2] - manager.metadata['observations_low'][:2]
+    grid_h, grid_w = h // step_size, w // step_size
 
     fig, ax = plt.subplots(figsize=(6, 6))
-    ax.quiver(grid_x, grid_y, u, v, angles="xy", scale_units="xy", scale=1, width=0.015, color=color)
-    ax.set_aspect('equal')
-    ax.invert_yaxis()
-    ax.grid()
-    if title is not None: ax.set(title=title, xlabel='y', ylabel='x')
-    fig.tight_layout()
-
-    return fig
-
-
-def grid_trajectories(obs: list|np.ndarray, acs: list|np.ndarray, space: tuple=(11,11), title: str|None=None, alpha: float=0.1, color: str='red'):
-    # todo include minecart with extra argument
-    frame = env_frame("deep-sea-treasure-v0")
-    grid_h, grid_w = space
-    fig, ax = plt.subplots(figsize=(6, 6))
-
     ax.imshow(frame, extent=(0, grid_w, grid_h, 0))
-    for episode in obs:
-        if len(episode) < 2: continue
-
-        xs = [coords[1] + 0.5 for coords in episode]
-        ys = [coords[0] + 0.5 for coords in episode]
-
-        ax.plot(xs, ys, alpha=alpha, linewidth=1.5, color=color)
-
-    ax.set_aspect('equal')
-    ax.axis("off")
-    if title: ax.set_title(title)
-
-    fig.tight_layout()
-    return fig
-
-
-def minecart_trajectories(observations: list|np.ndarray, actions: list|np.ndarray, space:tuple=(100, 100), mines:list|None=None,
-                          title:str|None=None, alpha=0.05, color='red', mine_color='blue'):
-    frame = env_frame("minecart-v0")
-    grid_h, grid_w = space
-    step = 1/ grid_h
-    fig, ax = plt.subplots(figsize=(6, 6))
-    #todo remove discretization
-
-    # map pixels → grid coords
-    ax.imshow(frame, extent=(0, grid_w, grid_h, 0))
-
-    if mines is not None:
-        for m in mines:
-            y, x = discretize(m, step)
-            ax.scatter(x * grid_w, y * grid_h, marker='o', color='yellow', s=30)
-
-    for obs, act in zip(observations, actions):
+    for obs, acs in zip(*manager.conditioning_features(flatten=True)):
         if len(obs) < 2: continue
 
-        xs, ys = [], []
-        for coords in obs:
-            y, x = discretize(coords[:2], step)
-            xs.append(x * grid_w)
-            ys.append(y * grid_h)
+        x_obs, y_obs, x_acs, y_acs = [], [], [], []
+        for coords, a in zip(obs, acs):
+            y, x = discretize(coords[:2], step_size)
+            x_obs.append(x * grid_w)
+            y_obs.append(y * grid_h)
 
-        ax.plot(xs, ys, alpha=alpha, linewidth=1.5, color=color)
-
-        for p, a in zip(obs, act):
             if a == 0:
-                y, x = discretize(p[:2], step)
-                ax.scatter(x * grid_w, y * grid_h, marker='x', color=mine_color, s=30)
+                x_acs.append(x * grid_w)
+                y_acs.append(y * grid_h)
 
-
+        ax.plot(x_obs, y_obs, alpha=alpha, linewidth=1.5, color=color)
+        if 'minetrain' in manager.metadata['env_id']:
+            ax.scatter(x_acs, y_acs, marker='x', color='blue', s=20)
 
     ax.set_aspect('equal')
     ax.axis("off")
     if title: ax.set_title(title)
     fig.tight_layout()
-
     return fig
 
 
-def cluster_scatter(data, labels, colors : list, title: str|None=None, precomputed: bool=True):
-    if data.shape[1] > 2: data = tsne_transform(data, precomputed=precomputed)
+
+def cluster_scatter(features:np.ndarray, labels:list, colors:list, title:str|None=None, precomputed:bool=True):
+    if features.shape[1] > 2: features = tsne_transform(features, precomputed=precomputed)
     fig, ax = plt.subplots(figsize=(8, 6))
 
     for l in set(labels):
-        x, y = data[labels == l, 0], data[labels == l, 1]
+        x, y = features[labels == l, 0], features[labels == l, 1]
         ax.scatter(x, y, label=f"Cluster {l + 1}", color=colors[l % len(colors)], linewidth=8)
 
     ax.legend()
@@ -171,22 +107,42 @@ def cluster_scatter(data, labels, colors : list, title: str|None=None, precomput
 
 
 def decision_tree(obs: list, acs: list, metadata: dict, max_depth: int=8, title: str|None=None):
-    assert len(obs) == len(acs), f'Length of observations {len(obs)} does not match length of actions {len(acs)}.'
-    observations_features, action_names = metadata['observations_features'], metadata['actions']
+    assert len(obs) == len(acs), f'Length mismatch {len(obs)} != {len(acs)}.'
+    obs, acs = tree_features(obs, acs)
 
     clf = DecisionTreeClassifier(max_depth=max_depth, min_samples_leaf=20, ccp_alpha=0.01)
     clf.fit(obs, acs)
 
-    graph, node_labels, edge_labels, _ = tree_to_graph(clf.tree_, clf.classes_, observations_features, action_names)
-    pos = graphviz_layout(graph, prog="dot")
+    graph, nodes, edges, _ = tree_to_graph(
+        clf.tree_, clf.classes_, metadata['observations_features'],metadata['actions']
+    )
+    pos = nx.drawing.nx_pydot.graphviz_layout(graph, prog="dot")
 
     fig, ax = plt.subplots()
     nx.draw(graph, pos, ax=ax, with_labels=False, node_color='white',)
-    nx.draw_networkx_labels(graph, pos, labels=node_labels, ax=ax)
-    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edge_labels, ax=ax)
+    nx.draw_networkx_labels(graph, pos, labels=nodes, ax=ax)
+    nx.draw_networkx_edge_labels(graph, pos, edge_labels=edges, ax=ax)
 
     ax.axis("off")
-    if title is not None: ax.set_title(title)
+    if title: ax.set_title(title)
     fig.tight_layout()
 
+    return fig
+
+
+def heatmap(visited:list, entr:np.ndarray, shape:tuple=(11, 11), v:tuple|None=None, title: str|None=None):
+    heat = np.full(shape, np.nan)
+    for s, e in zip(visited, entr): heat[*s[:2]] = e
+
+    fig, ax = plt.subplots(figsize=(8, 6))
+    square = shape[0] == shape[1]
+    vmin, vmax = v if v is not None else None, None
+    sns.heatmap(heat, ax=ax, vmin=vmin, vmax=vmax, square=square, cbar=True)
+
+    ax.invert_yaxis()
+    ax.tick_params(labelbottom=False, labelleft=False)
+
+    if title: ax.set_title(title)
+
+    fig.tight_layout()
     return fig

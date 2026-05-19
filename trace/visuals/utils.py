@@ -6,7 +6,7 @@ from sklearn.manifold import TSNE
 
 def tsne_transform(data, precomputed: bool=False, perplexity: int=30):
     if precomputed: assert data.shape[0] == data.shape[1], f"Invalid similarity matrix shape: {data.shape}"
-
+    perplexity = max(30, len(data)//3)
     tsne = TSNE(
         n_components = 2,
         perplexity = min(perplexity, len(data)-1),
@@ -66,3 +66,13 @@ def tree_to_graph(tree, actions: dict, feature_names: dict, action_names: dict=N
 
     root_id, _ = build(root)
     return graph, node_labels, edge_labels, root_id
+
+
+def tree_features(obs:list|np.ndarray, acs:list|np.ndarray):
+    assert len(acs) == len(obs), f'Length mismatch {len(acs)} != {len(obs)}'
+
+    if len(obs[0]) == len(acs[0]) + 1: obs = [traj[:-1] for traj in obs]
+    obs = np.array([coords for traj in obs for coords in traj])
+    acs = np.array([action for traj in acs for action in traj])
+
+    return obs, acs
