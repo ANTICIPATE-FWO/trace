@@ -1,10 +1,11 @@
 import os
 os.chdir('../')
 
-
 from collections.abc import Callable
+from yaml import safe_load
 
 from trace.behavior import EmpiricalDistribution, distance_matrix
+from trace.clustering import k_medoids
 from trace.core import TrajectoryManager
 
 
@@ -21,3 +22,8 @@ def behavior_clustering(manager:TrajectoryManager, cluster:Callable, k:int, metr
             f.write(str(labels.tolist()))
 
     return [manager.subset(labels == l) for l in range(k)], labels
+
+if __name__ == '__main__':
+    metadata = safe_load(open('trace/configs/dst-conc.yaml'))
+    manager = TrajectoryManager(metadata).load('data/dst_ground_truth.json')
+    behavior_clustering(manager=manager, cluster=k_medoids, k=3, metric='kl')
