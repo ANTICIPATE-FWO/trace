@@ -70,10 +70,6 @@ def all_ints(lst:list):
     return all(isinstance(x, int) for x in lst)
 
 
-def discretize(obs:list|np.ndarray, step:float=0.1):
-    return tuple(round(float(x) / step) * step for x in obs)
-
-
 def network_edges(start:np.ndarray, nodes:np.ndarray):
     return [[start, node] for node in nodes if not same_point(start, node)]
 
@@ -82,7 +78,6 @@ def pareto_filter(acc_rewards: np.ndarray):
     is_pareto = np.ones(len(acc_rewards), dtype=bool)
 
     for i in range(acc_rewards.shape[0]):
-        if i%100 == 0: print(f'\t{i}/{acc_rewards.shape[0]}')
         if not is_pareto[i]: continue
 
         for j in range(len(acc_rewards)):
