@@ -10,7 +10,8 @@ def make_env_factory(env_id: str, minetrain:bool=False):
         else: return env
     return _factory
 
-def initialize_setting(env_id: str, minetrain:bool=False):
+def initialize_setting(env_id: str|dict, minetrain:bool=False):
+    env_id = env_id if isinstance(env_id, str) else env_id['env_id']
     env = MOSyncVectorEnv(iter([make_env_factory(env_id, minetrain=minetrain)]))
     eval_env = MinecartTrailWrapper(make(env_id, max_episode_steps=1000)) if minetrain else make(env_id, max_episode_steps=1000)
     return env, eval_env

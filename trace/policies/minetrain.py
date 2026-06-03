@@ -15,6 +15,7 @@ class MinecartTrailWrapper(Wrapper):
         self.trails = []
         self.trail_angles = []
         self.current_trail = [np.array([0,0]), np.array([0,0])]
+        self.current_angle = 0
         self.previous_content = [0., 0.]
         self.on_trail = False
 
@@ -46,19 +47,25 @@ class MinecartTrailWrapper(Wrapper):
 
     def step(self, action):
         spin_allowed = self.at_node() is not None
+        if not spin_allowed: self._lock_orientation()
+        """
+        if action == minecart.ACT_ACCEL:
+            print(f'\tenv: acc at {self.get_pos()} with {self.get_speed()}')
+        if action == minecart.ACT_BRAKE:
+            print(f'\tenv: brake at {self.get_pos()} with {self.get_speed()}')
+        """
+        if self.on_trail and spin_allowed:
+            self.on_trail = False
 
-        if not self.on_trail:
-            if spin_allowed and action == minecart.ACT_ACCEL:
+        elif self.on_trail and not spin_allowed:
+            if action in (minecart.ACT_LEFT, minecart.ACT_RIGHT):
+                print('here')
+                action = minecart.ACT_NONE
+
+        elif not self.on_trail and spin_allowed:
+            if action == minecart.ACT_ACCEL:
                 self._pick_trail()
                 self.on_trail = True
-                self._lock_orientation()
-        else:
-            if spin_allowed:
-                self.on_trail = False
-            else:
-                if action in (minecart.ACT_LEFT, minecart.ACT_RIGHT):
-                    action = minecart.ACT_NONE
-                self._lock_orientation()
 
         obs, reward, terminated, truncated, info = self.env.step(action)
         if action == minecart.ACT_MINE: self._deterministic_reward()
@@ -85,7 +92,6 @@ class MinecartTrailWrapper(Wrapper):
             mined *= cart_free / total_mined
         self.env.unwrapped.cart.content = self.previous_content + mined
         self.previous_content += mined
-        print(f'\tenv: yielded {mined} -> content {self.previous_content}')
 
 
     def _pick_trail(self):
@@ -122,5 +128,9 @@ class MinecartTrailWrapper(Wrapper):
 
     def get_pos(self):
         return self.env.unwrapped.cart.pos
+
+    def get_speed(self):
+        return self.env.unwrapped.cart.speed
+
 
 
