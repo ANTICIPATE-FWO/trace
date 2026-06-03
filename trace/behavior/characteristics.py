@@ -1,7 +1,7 @@
 from sklearn.tree import DecisionTreeClassifier, export_text
 import numpy as np
 
-from trace.behavior import EmpiricalDistribution
+from trace.behavior.conditioning import EmpiricalDistribution
 
 def tree_rules(obs, acs, feature_names: list = None):
     if feature_names is None: feature_names = ['x', 'y']

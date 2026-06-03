@@ -3,7 +3,7 @@ import numpy as np
 from trace.behavior.conditioning import EmpiricalDistribution
 
 def distance_matrix(models: list[EmpiricalDistribution], metric :str='agreement', smoothing: bool=False, norm: bool=True, lam: float=0.5):
-    assert metric in ('frobenius', 'wasserstein' ,'agreement')
+    assert metric in ('frobenius', 'wasserstein' ,'agreement', 'kl')
 
     n = len(models)
     dist_mat = np.ones((n, n))
@@ -30,6 +30,9 @@ def distance_matrix(models: list[EmpiricalDistribution], metric :str='agreement'
                 for s in overlap:
                     d += 1 if models[i].act(s) != models[j].act(s) else 0
                 d /= len(overlap)
+            elif metric == 'kl':
+                d = sum(kl(models[i].action_probs(s), models[j].action_probs(s)) for s in overlap)
+                d /= len(overlap)
 
             dist_mat[i, j] = dist_mat[j, i] = d
     if norm: dist_mat = (dist_mat - dist_mat.min()) / (dist_mat.max() - dist_mat.min())
@@ -37,9 +40,9 @@ def distance_matrix(models: list[EmpiricalDistribution], metric :str='agreement'
 
 
 
-def wasserstein(dist1, dist2, cost, epsilon=0.5, max_iter=1000, tol=1e-9):
-    dist1, dist2, cost = np.array(dist1), np.array(dist2), np.array(cost)
-    kernel = np.exp(-cost / epsilon)
+def wasserstein(dist1:list|np.ndarray, dist2:list|np.ndarray, cost:list|np.ndarray, eps:float=0.5, max_iter:int=1000, tol:float=1e-9):
+    dist1, dist2, cost = np.asarray(dist1), np.asarray(dist2), np.asarray(cost)
+    kernel = np.exp(-cost / eps)
     u, v = np.ones(len(dist1)), np.ones(len(dist1))
 
     for _ in range(max_iter):
@@ -52,18 +55,28 @@ def wasserstein(dist1, dist2, cost, epsilon=0.5, max_iter=1000, tol=1e-9):
     return np.sum(np.outer(u, v) * kernel * cost)
 
 
-def l2_cost(act_coord, act_coord2=None):
+def l2_cost(act_coord:list|np.ndarray, act_coord2:list|np.ndarray|None=None):
     if act_coord2 is None: act_coord2 = act_coord
-    act_coord, act_coord2 = np.array(act_coord), np.array(act_coord2)
+    act_coord, act_coord2 = np.asarray(act_coord), np.asarray(act_coord2)
 
     if act_coord.ndim == act_coord2.ndim == 1:
         return np.linalg.norm(act_coord - act_coord2)
     return np.array([[np.linalg.norm(i - j) for i in act_coord] for j in act_coord2])
 
 
-def frobenius(mat1, mat2):
+def frobenius(mat1:list|np.ndarray, mat2:list|np.ndarray):
     mat1, mat2 = np.asarray(mat1), np.asarray(mat2)
     assert mat1.shape == mat2.shape, f'{mat1.shape} != {mat2.shape}'
 
     diff = mat1 - mat2
     return np.sqrt(np.sum(diff * diff))
+
+
+def kl(dist1:list|np.ndarray, dist2:list|np.ndarray, eps:float=1e-12):
+    dist1, dist2 = np.asarray(dist1), np.asarray(dist2)
+    assert dist1.shape == dist2.shape, f'{dist1.shape} != {dist2.shape}'
+
+    dist1 = dist1 / (np.sum(dist1) + eps)
+    dist2 = dist2 / (np.sum(dist2) + eps)
+
+    return np.sum(dist1 * np.log((dist1 + eps) / (dist2 + eps)))
