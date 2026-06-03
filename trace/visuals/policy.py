@@ -3,11 +3,11 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import networkx as nx
 
-from trace.core import discretize, TrajectoryManager
+from trace.core import TrajectoryManager
+from behavior.condiitoning import uniform_quantization
 from trace.visuals.utils import env_frame, tsne_transform, tree_to_graph, tree_features
 
 from sklearn.tree import DecisionTreeClassifier
-
 
 
 def temporal_alignment(action_seq:list|np.ndarray, action_names:dict, time_range: tuple|None=None, title: str|None=None):
@@ -57,37 +57,40 @@ def temporal_alignment(action_seq:list|np.ndarray, action_names:dict, time_range
     return fig
 
 
-def grid_trajectories(manager:TrajectoryManager, frame_dir:str|None=None, step_size:float|int=1,
+def grid_trajectories(manager:TrajectoryManager, abstr_frame:bool=False, step_size:float|int=1,
                       title: str|None=None, alpha: float|int=0.1, color: str='red'):
-    frame = plt.imread('plots/sketches/dst_frame_abstr.png') if frame_dir else env_frame(manager.metadata['env_id'])
-    h, w = manager.metadata['observations_high'][:2] - manager.metadata['observations_low'][:2]
-    grid_h, grid_w = h // step_size, w // step_size
 
-    fig, ax = plt.subplots(figsize=(6, 6))
-    ax.imshow(frame, extent=(0, grid_w, grid_h, 0))
-    for obs, acs in zip(*manager.conditioning_features(flatten=True)):
+    frame = plt.imread('plots/sketches/dst_frame_abstr.png') if abstr_frame else env_frame(manager.metadata['env_id'])
+    h, w = np.array(manager.metadata['observations_high'])[:2]
+    fig, ax = plt.subplots()
+    ax.imshow(frame, extent=(0, w, 0, h), origin='lower')
+
+    for obs, acs, _ in zip(*manager.conditioning_features(flatten=True)):
+
         if len(obs) < 2: continue
 
-        x_obs, y_obs, x_acs, y_acs = [], [], [], []
+        x_obs, y_obs = [], []
+        x_acs, y_acs = [], []
+
         for coords, a in zip(obs, acs):
-            y, x = discretize(coords[:2], step_size)
-            x_obs.append(x * grid_w)
-            y_obs.append(y * grid_h)
+            y, x = coords[:2]
+            x_obs.append(x)
+            y_obs.append(y)
 
             if a == 0:
-                x_acs.append(x * grid_w)
-                y_acs.append(y * grid_h)
+                x_acs.append(x)
+                y_acs.append(y)
 
         ax.plot(x_obs, y_obs, alpha=alpha, linewidth=1.5, color=color)
+
         if 'minetrain' in manager.metadata['env_id']:
             ax.scatter(x_acs, y_acs, marker='x', color='blue', s=20)
 
-    ax.set_aspect('equal')
-    ax.axis("off")
+    ax.set(xlim=(0, w), ylim=(h, 0), aspect='equal')
+    ax.axis('off')
     if title: ax.set_title(title)
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0, 1, 1))
     return fig
-
 
 
 def cluster_scatter(features:np.ndarray, labels:list, colors:list, title:str|None=None, precomputed:bool=True):
