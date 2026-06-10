@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from plotly import graph_objs as go
+
 
 def pareto_2d(points: np.ndarray, ground_truth: np.ndarray|None = None, title: str|None = None):
     assert points.shape[1] == 2, f'Visualization not possible for {points.shape[1]} dimensions'
@@ -16,19 +16,6 @@ def pareto_2d(points: np.ndarray, ground_truth: np.ndarray|None = None, title: s
     ax.legend()
     if title: ax.set_title(title)
     fig.tight_layout()
-    return fig
-
-
-def sankey(source: np.ndarray, target: np.ndarray, value: np.ndarray, colors: dict):
-    k, l = len(np.unique(source)), len(np.unique(target))
-    labels = [f'Cluster {i+1} (b)' for i in range(k)] + [f'Cluster {i+1} (r)' for i in range(l)]
-    node_colors = (colors['warm'][:k] + colors['cool'][:l])
-
-    fig = go.Figure(data=[go.Sankey(
-        node=dict(label=labels, pad=20, thickness=20, color=node_colors),
-        link=dict(source=source, target=target, value=value)
-    )])
-    fig.update_layout(title_text="Cluster Flow Between Two K-Means Clusterings", font_size=12)
     return fig
 
 
