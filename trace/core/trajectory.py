@@ -1,5 +1,7 @@
 from json import load, dumps
 from yaml import safe_load
+from os import path
+
 import numpy as np
 
 from trace.core.maths import discount, pareto_filter
@@ -12,11 +14,12 @@ class TrajectoryManager:
         self.env_id = self.metadata['env_id']
         self.num_actions = len(self.metadata['actions'])
         self.gamma = self.metadata['gamma']
-
         self.trajectories = []
 
-    def load(self, source, pareto:bool=False, duplicates:bool=False, split:bool=False):
-        if isinstance(source, str): self.trajectories = load(open(source, 'rb'))
+    def load(self, source:str|list, pareto:bool=False, duplicates:bool=False, split:bool=True):
+        if isinstance(source, str):
+            filepath = path.join('data/', self.metadata['file_prefix']) + f'_{source}.json'
+            self.trajectories = load(open(filepath, 'rb'))
         elif isinstance(source, list): self.trajectories = source
         else: raise ValueError(f'Unknown source type: {type(source)}')
 
@@ -32,7 +35,6 @@ class TrajectoryManager:
         return TrajectoryManager(metadata=self.metadata).load(new_trajectories)
 
     def _verify_data(self):
-        # todo include shape assertations
         action_seq = self.sequence(key='actions', per_point=False, pad=None)
         assert all(a in self.metadata['actions'] for ep in action_seq for a in ep)
 
@@ -57,7 +59,7 @@ class TrajectoryManager:
         if pad: return np.array(homogenize(seq))
         return seq
 
-    def conditioning_features(self, pad: int|None=None, per_point:bool=False, gamma:float|None=None, ):
+    def conditioning_features(self, pad: int|None=None, per_point:bool=False, gamma:float|int|None=None, ):
         obs = self.sequence(key='observations', pad=pad, per_point=per_point)
         acs = self.sequence(key='actions', pad=pad, per_point=per_point)
         rew = self.accrue(key='rewards', gamma=gamma)
