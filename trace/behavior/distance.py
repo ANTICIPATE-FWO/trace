@@ -4,15 +4,14 @@ from trace.behavior.conditioning import EmpiricalDistribution
 
 def distance_matrix(models: list[EmpiricalDistribution], metric :str='agreement', smoothing: bool=False, norm: bool=True, lam: float=0.5):
     assert metric in ('frobenius', 'wasserstein' ,'agreement', 'kl')
+    dist_mat = np.ones((len(models), len(models)))
 
-    n = len(models)
-    dist_mat = np.ones((n, n))
-
-    for i in range(n):
-        if i % 100 == 0: print(f'{i}/{n}')
+    for i in range(len(models)):
+        #if i % 100 == 0: print(f'{i}/{n}')
         vi = set(models[i].get_visited())
 
-        for j in range(i, n):
+        for j in range(i, len(models)):
+            assert models[i].feature_mask == models[j].feature_mask, f'State feature mask mismatch'
             vj = set(models[j].get_visited())
             if not (overlap := vi & vj): continue
 
@@ -22,7 +21,7 @@ def distance_matrix(models: list[EmpiricalDistribution], metric :str='agreement'
                 mat_j = [models[j].action_probs(s) for s in vi|vj]
                 d = frobenius(mat_i, mat_j)
             elif metric == 'wasserstein':
-                cost = l2_cost(models[i].get_actions(), models[j].get_actions())
+                cost = l2_cost(models[i].action_values(), models[j].action_values())
                 for s in overlap:
                     d += wasserstein(models[i].action_probs(s), models[j].action_probs(s), cost)
                 d /= len(overlap)

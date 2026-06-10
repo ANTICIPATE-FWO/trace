@@ -26,8 +26,22 @@ def decisiveness(obs:np.ndarray, acs:np.ndarray, metadata:dict, entropy:bool=Fal
             h = -np.sum(p * np.log(p + eps))
             d.append(1.0 - h / max_entropy)
     else:
-        variances = [np.std(behavior_model.action_probs(state)) for state in policy.get_visited()]
+        variances = [
+            np.std(behavior_model.action_probs(state))
+            for state in behavior_model.get_visited()
+        ]
         d = np.array(variances, dtype=float)
 
 
     return d, behavior_model.get_visited()
+
+
+def cluster_compactness(distances:np.ndarray, labels:list, medoid_indices:list):
+    compactness = []
+
+    for cluster_id, medoid_idx in enumerate(medoid_indices):
+        cluster_points = np.where(labels == cluster_id)[0]
+        cluster_dists = distances[medoid_idx, cluster_points]
+        compactness.append(float(np.mean(cluster_dists)))
+
+    return compactness
