@@ -7,23 +7,23 @@ os.chdir('..')
 import numpy as np
 np.set_printoptions(suppress=True, precision=2)
 
-from yaml import safe_load
 
 from trace.core import TrajectoryManager
 from trace.policies import initialize_setting, dst_gt, minetrain_gt, IPRO
 
 
-def ground_truth(metadata:dict, save:bool=True):
-    env_id, file_prefix = metadata['env_id'], metadata['file_prefix']
+def ground_truth(manager:TrajectoryManager, save:bool=True):
+    assert len(manager) == 0. , 'Input trajectory manager is not empty'
+    env_id, file_prefix = manager.metadata['env_id'], manager.metadata['file_prefix']
 
     if 'minetrain' in file_prefix:
         _, env = initialize_setting(env_id=env_id, minetrain=True)
-        manager = TrajectoryManager(metadata).load(minetrain_gt(env), pareto=True)
+        manager.load(minetrain_gt(env), pareto=True)
 
-    elif 'deep-sea-treasure' in file_prefix:
+    elif 'deep-sea-treasure' in env_id:
         _, env = initialize_setting(env_id=env_id, minetrain=True)
-        sea_map, action_mapping = env.unwrapped.sea_map, metadata['action_mapping']
-        manager = TrajectoryManager(metadata).load(dst_gt(sea_map, action_mapping))
+        sea_map, action_mapping = env.unwrapped.sea_map, manager.metadata['action_mapping']
+        manager.load(dst_gt(sea_map, action_mapping))
 
     else:
         raise NotImplementedError(f'Ground truth not implemented for {env_id}')
@@ -35,31 +35,36 @@ def ground_truth(metadata:dict, save:bool=True):
     return manager
 
 
-def ipro_samples(metadata:dict, iter_steps:int, save:bool=True, verbose:bool=True):
-    env, eval_env = initialize_setting(env_id=metadata['env_id'], minetrain='minetrain' in metadata['env_id'])
+def ipro_samples(manager:TrajectoryManager, iter_steps:int, save:bool=True, verbose:bool=True):
+    assert len(manager) == 0. , 'Input trajectory manager is not empty'
+    minetrain = 'minetrain' in manager.metadata['file_prefix']
+    env, eval_env = initialize_setting(env_id=manager.metadata['env_id'], minetrain=minetrain)
 
     ipro = IPRO(
         env=env,
         direction="maximize",
-        tolerance=float(metadata['tolerance']),
+        tolerance=float(manager.metadata['tolerance']),
         max_iterations=None,
         iter_total_timesteps=iter_steps,
-        num_steps=metadata['num_steps'],
+        num_steps=manager.metadata['num_steps'],
         log=False,
-        gamma=metadata['gamma'])
+        gamma=manager.metadata['gamma'])
     if verbose: print('Initialized algorithm')
 
     pareto_set = ipro.train(
         eval_env=eval_env,
-        ref_point=metadata['ref_point'],
+        ref_point=manager.metadata['ref_point'],
         deterministic=True,
-        #eval_episodes=metadata['eval_episodes'],
+        eval_episodes=manager.metadata['eval_episodes'],
     )
 
-    manager = TrajectoryManager(metadata).load([traj for _, _, traj in pareto_set])
-    if save: manager.save(f"data/{metadata['file_prefix']}_ipro.json")
+    manager.load([traj for _, _, traj in pareto_set])
+    if save: manager.save(f"data/{manager.metadata['file_prefix']}_ipro.json")
     return manager
 
 
 if __name__ == '__main__':
-    ipro_samples(safe_load(open('trace/configs/minetrain.yaml')), iter_steps=10_000_000)
+    #ipro_samples(safe_load(open('trace/configs/minetrain.yaml')), iter_steps=10_000_000)
+    gt_manager = ground_truth(TrajectoryManager('minetrain'))
+    print('Number of trajectories: ', len(gt_manager))
+    obs, acs, _ = gt_manager.conditioning_features(per_point=False)

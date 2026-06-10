@@ -1,13 +1,12 @@
 import os
 os.chdir('../')
 
-from collections import defaultdict
-import matplotlib.pyplot as plt
 import numpy as np
-
+np.set_printoptions(precision=4)
 
 from trace.core import TrajectoryManager
-from trace.behavior import decisiveness, EmpiricalDistribution
+from trace.behavior import decisiveness, quantize
+
 
 def ablation(universal:TrajectoryManager, labels:list|np.ndarray):
     labels, k = np.array(labels), max(labels) + 1
@@ -23,52 +22,19 @@ def cluster_report(clusters:list[TrajectoryManager], method:str):
     cluster_vars, cluster_ents = [], []
     for i, cluster in enumerate(clusters):
         obs, acs, _ = cluster.conditioning_features(per_point=False)
+        obs = quantize(obs, method='uni', bins=[100, 100, 6, 10, 10, 90, 90])
 
-        cluster_vars.append(np.mean(decisiveness(obs, acs, cluster.metadata)[0]))
-        cluster_ents.append(np.mean(decisiveness(obs, acs, cluster.metadata, entropy=True)[0]))
+        cluster_vars.append(np.mean(1000*decisiveness(obs, acs, cluster.metadata)))
+        cluster_ents.append(np.mean(1000*decisiveness(obs, acs, cluster.metadata, entropy=True)))
 
-        print(f"\tCluster {i}:\n\t\tVariance: {cluster_vars[-1]:.3f}\tEntropy: {cluster_ents[-1]:.3f}")
+        print(f"\tCluster {i}:\n\t\tVariance: {cluster_vars[-1]:.5f}\tEntropy: {cluster_ents[-1]:.5f}")
     print("\tAverage")
-    print(f"\t\tVariance: {np.mean(cluster_vars):.3f}\tEntropy: {np.mean(cluster_ents):.3f}")
-
-
-def overlap_analysis(policies:list|np.ndarray):
-    common_states = defaultdict(int)
-
-    for i in range(len(policies)):
-        vi = set(policies[i].get_visited())
-
-        for j in range(i+1, len(policies)):
-            vj = set(policies[j].get_visited())
-            common_states[len(vi & vj)] += 1
-
-    x = sorted(common_states.keys())
-    y = [common_states[k] for k in x]
-
-    plt.bar(x, y)
-
-    plt.xlabel('Number of common states')
-    plt.ylabel('Number of trajectory pairs')
-    plt.title('Overlap in pairs of trajectories')
-    plt.yscale('log')
-    plt.tight_layout()
-    plt.savefig('plots/minetrain/overlap.png')
-
-
-def example():
-    from yaml import safe_load
-    from trace.clustering.cached_labels.dst_k_medoids_kl import labels
-    metadata = safe_load(open('trace/configs/minetrain.yaml', 'r'))
-    manager = TrajectoryManager(metadata).load('data/minetrain_ground_truth.json', filtering=True)
-    obs, acs, _ = manager.conditioning_features(pad=None, flatten=True)
-
-    policies = [EmpiricalDistribution(metadata).fit(o, a) for o,a in zip(obs, acs)]
-
-    overlap_analysis(policies)
-
-
+    print(f"\t\tVariance: {np.mean(cluster_vars):.5f}\tEntropy: {np.mean(cluster_ents):.5f}")
 
 
 if __name__ == '__main__':
-    example()
-
+    from trace.clustering.cached_labels import minetrain_k_medoids_kl
+    ablation(
+        universal=TrajectoryManager('minetrain').load('ground_truth'),
+        labels=minetrain_k_medoids_kl.labels,
+    )
