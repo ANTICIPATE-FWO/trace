@@ -10,9 +10,10 @@ def k_means(data, k: int = 3):
     return kmeans.labels_
 
 
-def k_medoids(data, k: int = 3, metric: str = "cosine"):
+def k_medoids(data, k: int = 3, metric: str = "cosine", return_medoids:bool=False):
     kmedoids = KMedoids(n_clusters=k, metric=metric, init="k-medoids++")
     kmedoids.fit(data)
+    if return_medoids: return kmedoids.labels_, kmedoids.medoid_indices_
     return kmedoids.labels_
 
 
