@@ -1,9 +1,9 @@
 
 
-# TRACE: Trajectory-based Clustering for Explainability
-Developed at Vrije Universiteit Brussel (VUB) as part of the FWO-SBO project ANTICIPATE, in collaboration with
-University of Antwerp (UA) and Universitair Ziekenhuis Brussel (UZBrussel).
+# TRACE: Trajectory-based Clustering for Explaining Multi-Objective Reinforcement Learning
+Developed at Vrije Universiteit Brussel (VUB) as part of the FWO-SBO project ANTICIPATE.
 
+**Paper:** [Multi-Objective Decision Making Workshop @ IJCAI-ECAI 2026]<br>
 **Dependencies:** Python 3.11<br>
 **Contact:** Emily Palaska (emily.palaska@vub.be)<br>
 **License:** GNU General Public License v3.0
@@ -24,35 +24,30 @@ Install requirements with `pip install -r requirements.txt`<br>
 ## ⚙️ Example of usage
 
 ```python
-from yaml import safe_load
 import numpy as np
-
 from trace.core import TrajectoryManager
-from trace.behavior import EmpiricalDistribution, distance_matrix
+from trace.behavior import EmpiricalDistribution, distance_matrix, quantize
 from trace.clustering import k_medoids
-from trace.visuals import temporal_alignment
+from trace.visuals import temporal_alignment, grid_trajectories
 
-# Trajectory loading
-filepath = '/data/dst_ground_truth.json'
-metadata = safe_load(open('trace/configs/dst-conc.yaml','r')) 
-manager = TrajectoryManager(metadata).load(filepath)
+# Trajectory loading (precomputed)
+manager = TrajectoryManager('minetrain').load('ground_truth', pareto=True)
 
 # Behavior features
-obs, acs, _ = manager.conditioning_features(flatten=True, pad=None)
-models = [EmpiricalDistribution(metadata).fit(o, a) for o, a in zip(obs, acs)]
-features = distance_matrix(models, metric='agreement')
+obs, acs, rew = manager.conditioning_features()
+quantize(obs, method='eq', bins=[10, 10, 6, 10, 10, 90, 90])
+models = [EmpiricalDistribution(manager.metadata).fit(o, a) for o, a in zip(obs, acs)]
+features = distance_matrix(models, metric='kl')
 
-# Clustering
-k = 3
+# Clustering algorithm
+k = 5
 labels = k_medoids(features, k=k)
 clusters = [manager.subset(np.array(labels) == l) for l in range(k)]
 
 # Intuitive plots
 for c, cluster in enumerate(clusters):
-    acs = cluster.sequence('actions', flatten=True)
-    fig = temporal_alignment(acs, metadata['actions'], title=f'Cluster {c}')
-    fig.show()
-
+    temporal_alignment(cluster, title=f'Cluster {c}').show()
+    grid_trajectories(cluster, title=f'Cluster {c}').show()
 
 ```
 
@@ -72,13 +67,16 @@ can be found in the module `trace.policies`, with modifications concerning traje
 original creators of each MORL algorithm.
 
 An abstract high-level flow chart of the mechanism:
-<p align="center"> <img src="plots/sketches/pipeline.png"/> </p>
+<p align="center">
+    <img src="plots/sketches/pipeline.png" height="250"/>
+    <img src="plots/sketches/data_structure.jpg" height="250"/>
+</p>
 
 ## 💭 Behavior Modeling
 
-todo: pic of four plots from report
+To derive valuable behavior features for clustering, we first quantize the state space to have equal values per bin.
+Then, to incorporate state-dependent structure into the
+behavioral representation, we condition actions on the states in which they are performed. Finally, we compare two 
+trajectories using the kl divergence on their common (quantized) state's empirical distributions.
 
-
-## Agreement and decisiveness
-
-todo: explain and minimal mathematical formulas
+<p align="center"> <img src="plots/sketches/conditioned.png" height="250" /> </p>
