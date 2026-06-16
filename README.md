@@ -68,8 +68,8 @@ original creators of each MORL algorithm.
 
 An abstract high-level flow chart of the mechanism:
 <p align="center">
-    <img src="plots/sketches/pipeline.png" height="250"/>
-    <img src="plots/sketches/data_structure.jpg" height="250"/>
+    <img src="plots/sketches/pipeline.png" width="500"/>
+    <img src="plots/sketches/data_structure.jpg" width="500"/>
 </p>
 
 ## 💭 Behavior Modeling
